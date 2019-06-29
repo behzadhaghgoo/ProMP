@@ -18,5 +18,8 @@ setup(name="maml_zoo",
         'gym==0.10.5',
         'python_dateutil',
         'tensorflow>=1.4.0'
+        'numpy-stl>=2.10.1',
+        'opencv-python>=4.1.0.25',
+        'pyquaternion==0.9.5',
       ],
       zip_safe=False)
