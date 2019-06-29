@@ -21,5 +21,6 @@ setup(name="maml_zoo",
         'numpy-stl>=2.10.1',
         'opencv-python>=4.1.0.25',
         'pyquaternion==0.9.5',
+        'cached_property',
       ],
       zip_safe=False)

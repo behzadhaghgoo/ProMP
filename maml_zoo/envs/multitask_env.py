@@ -1,13 +1,7 @@
-import random
-
 from cached_property import cached_property
 from maml_zoo.utils import Serializable
 import gym
 import numpy as np
-
-
-def uniform_random(num_tasks, last_task, n_samples):
-    return random.randint(0, num_tasks)
 
 
 class MultiTaskEnv(gym.Env, Serializable):
@@ -75,29 +69,33 @@ class MultiTaskEnv(gym.Env, Serializable):
     API's for MAML Sampler
     '''
     def sample_tasks(self, meta_batch_size):
-        return random.randint(0, num_tasks, size=meta_batch_size)
+        return np.random.randint(0, self.num_tasks, size=meta_batch_size)
     
     def set_task(self, task):
         self._active_task = task
 
+    def log_diagnostics(self, paths, prefix):
+        pass
+
 
 class MultiClassMultiTaskEnv(MultiTaskEnv):
     def __init__(self,
-                 task_selection_strategy=uniform_random,
                  task_env_cls_dict=None,
                  task_args_kwargs=None,
                  sampled_tasks=None,):
         Serializable.quick_init(self, locals())
+
         assert len(task_env_cls_dict.keys()) == len(task_args_kwargs.keys())
         for k in task_env_cls_dict.keys():
             assert k in task_args_kwargs
 
         self._task_envs = []
         self._task_names = []
+
         for task, env_cls in task_env_cls_dict.items():
             task_args = task_args_kwargs[task]['args']
             task_kwargs = task_args_kwargs[task]['kwargs']
             self._task_envs.append(env_cls(*task_args, **task_kwargs))
             self._task_names.append(task)
-        self._task_selection_strategy = task_selection_strategy
+
         self._active_task = None
