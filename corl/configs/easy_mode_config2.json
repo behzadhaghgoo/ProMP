@@ -6,7 +6,7 @@
       200
     ],
     "envs_per_task": 1,
-    "rollouts_per_meta_task": 40,
+    "rollouts_per_meta_task": 20,
     "parallel": true,
     "max_path_length":200,
     "discount": 0.99,

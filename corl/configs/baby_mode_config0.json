@@ -6,7 +6,7 @@
       200
     ],
     "envs_per_task": 1,
-    "rollouts_per_meta_task": 20,
+    "rollouts_per_meta_task": 10,
     "parallel": true,
     "max_path_length":200,
     "discount": 0.99,
@@ -14,7 +14,7 @@
     "normalize_adv": true,
     "positive_adv": false,
     "inner_lr": 0.1,
-    "num_inner_grad_steps": 5,
+    "num_inner_grad_steps": 1,
     "step_size": 0.01,
     "inner_type": "likelihood_ratio",
     "n_itr": 1000000
