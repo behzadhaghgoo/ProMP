@@ -97,7 +97,7 @@ if __name__=="__main__":
     rand_num = np.random.uniform()
     idx = args.variant_index
     logger.configure(dir=maml_zoo_path + '/data/trpo/test_{}_{}_{}'.format(TASKNAME, idx, rand_num), format_strs=['stdout', 'log', 'csv'],
-                     snapshot_mode='last_gap')
+                     snapshot_mode='gap', snapshot_gap=5,)
     config = json.load(open("./corl/configs/baby_mode_config{}.json".format(idx), 'r'))
     json.dump(config, open(maml_zoo_path + '/data/trpo/test_{}_{}_{}/params.json'.format(TASKNAME, idx, rand_num), 'w'))
     main(config)
