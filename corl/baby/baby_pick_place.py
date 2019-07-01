@@ -21,8 +21,8 @@ TASKNAME = 'pick_place'
 
 def main(config):
 
-    goal_low = np.array((0.1 - 1e-2, 0.8 - 1e-2, 0.2))
-    goal_high = np.array((0.1 + 1e-2, 0.8 + 1e-2, 0.2))
+    goal_low = np.array((-0.1, 0.8, 0.2))
+    goal_high = np.array((0.1, 0.9, 0.2))
 
     goals = np.random.uniform(low=goal_low, high=goal_high, size=(N_TASKS, len(goal_low))).tolist()
     print(goals)
