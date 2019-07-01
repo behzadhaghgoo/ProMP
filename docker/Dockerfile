@@ -23,6 +23,9 @@ ENV PATH /opt/conda/bin:$PATH
 ENV LANG C.UTF-8
 ENTRYPOINT [ "/usr/bin/tini", "--" ]
 
+# build-dep requires sources
+RUN echo 'deb-src http://us.archive.ubuntu.com/ubuntu xenial main universe' >> /etc/apt/sources.list
+
 # ========== Special Deps ==========
 RUN apt-get update
 RUN apt-get -y install git make cmake unzip
@@ -55,6 +58,7 @@ RUN unzip mjpro150_linux.zip -d /root/.mujoco
 RUN unzip mjpro131_linux.zip -d /root/.mujoco
 ADD mjkey.txt /root/.mujoco/mjkey.txt
 RUN apt-get install -y libgl1-mesa-dev libgl1-mesa-glx libglew-dev libosmesa6-dev
+ENV LD_LIBRARY_PATH /root/.mujoco/mjpro150/bin:$LD_LIBRARY_PATH
 
 # ========= Cassie Environment ===========
 RUN apt-get install -y llvm-5.0
@@ -62,15 +66,17 @@ RUN apt-get install -y libglfw3-dev
 RUN apt-get install -y clang-5.0
 
 # ========== Add codebase stub ==========
-CMD mkdir /root/code
-ADD environment.yml /root/code/environment.yml
-RUN conda env create -f /root/code/environment.yml
+RUN mkdir -p /root/code/ProMP
+WORKDIR /root/code/ProMP
+ADD external/metaworld/setup.py /root/code/ProMP/external/metaworld/setup.py
+ADD docker/environment.yml /root/code/ProMP/docker/environment.yml
+RUN conda env create -f /root/code/ProMP/docker/environment.yml
+RUN ["/bin/bash", "-c", "source activate maml_zoo && pip install -e external/metaworld"]
 
-ENV PYTHONPATH /root/code/maml_zoo:$PYTHONPATH
-ENV LD_LIBRARY_PATH /root/.mujoco/mjpro150/bin:$LD_LIBRARY_PATH
+ENV PYTHONPATH /root/code/ProMP:$PYTHONPATH
 ENV PATH /opt/conda/envs/maml_zoo/bin:$PATH
 RUN echo "source activate maml_zoo" >> /root/.bashrc
 ENV BASH_ENV /root/.bashrc
-WORKDIR /root/code
 
-RUN python -c 'import mujoco_py'
+COPY . /root/code/ProMP
+RUN python -c "import mujoco_py"

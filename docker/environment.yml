@@ -6,7 +6,7 @@ dependencies:
         - mpi4py
         - Flask
         - setuptools
-        - gym==0.10.5
+        - gym>=0.10.5
         - joblib==0.12.2
         - numpy>=1.15
         - PyPrind
@@ -21,3 +21,5 @@ dependencies:
         - matplotlib
         - git+https://github.com/dennisl88/rand_param_envs.git
         - git+https://github.com/dennisl88/multiworld.git@russell
+        - cached_property
+        - ipdb
