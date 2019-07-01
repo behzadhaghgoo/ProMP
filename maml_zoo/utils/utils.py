@@ -26,6 +26,13 @@ def remove_scope_from_name(name, scope):
     result = result[1:] if result[0] == '/' else result
     return result.split(":")[0]
 
+def add_name_to_scope(name, var_dict):
+    new_var_dict = dict()
+    for var, val in var_dict.items():
+        new_name = name + '/' + var
+        new_var_dict[new_name] = val
+    return new_var_dict
+
 def remove_first_scope_from_name(name):
     return name.replace(name + '/', "").split(":")[0]
 
