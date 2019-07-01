@@ -224,6 +224,7 @@ class MetaPolicy(Policy):
         self.policy_params_keys = None
         self.policies_params_phs = None
         self.meta_batch_size = None
+        print('MetaPolicy is called...')
 
     def build_graph(self):
         """

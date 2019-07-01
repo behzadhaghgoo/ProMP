@@ -1,0 +1,155 @@
+Logging to /root/code/ProMP/corl/data/vpg/test_reach_0_0.5488135039273248
+
+ ---------------- Iteration 0 ----------------
+Sampling set of tasks/goals for this meta-batch...
+Obtaining samples...
+Processing samples...
+Optimizing policy...
+Optimizing
+Computing statistics
+Saving snapshot...
+Saved
+--------------------------------------------
+| AverageDiscountedReturn | 5.55e+04       |
+| AverageReturn           | 1.2e+05        |
+| Itr                     | 0              |
+| ItrTime                 | 19             |
+| LossAfter               | -0.0318431     |
+| LossBefore              | -2.6521228e-08 |
+| MaxReturn               | 1.57e+05       |
+| Meta-test-AveragePol... | 0.7498856      |
+| Meta-test-EnvExecTime   | 12.4           |
+| Meta-test-PolicyExec... | 5.44           |
+| MinReturn               | 9.25e+04       |
+| NumTrajs                | 280            |
+| StdReturn               | 1.1e+04        |
+| Time                    | 19             |
+| Time-Optimization       | 0.287          |
+| Time-SampleProc         | 0.0747         |
+| Time-Sampling           | 18.6           |
+| n_timesteps             | 40000          |
+--------------------------------------------
+
+ ---------------- Iteration 1 ----------------
+Sampling set of tasks/goals for this meta-batch...
+Obtaining samples...
+Processing samples...
+Optimizing policy...
+Optimizing
+Computing statistics
+Saving snapshot...
+Saved
+-------------------------------------------
+| AverageDiscountedReturn | 589           |
+| AverageReturn           | 613           |
+| Itr                     | 1             |
+| ItrTime                 | 18.9          |
+| LossAfter               | -0.0          |
+| LossBefore              | 3.9236888e-08 |
+| MaxReturn               | 627           |
+| Meta-test-AveragePol... | 0.73536193    |
+| Meta-test-EnvExecTime   | 12.5          |
+| Meta-test-PolicyExec... | 5.34          |
+| MinReturn               | 605           |
+| NumTrajs                | 280           |
+| StdReturn               | 0.973         |
+| Time                    | 37.8          |
+| Time-Optimization       | 0.2           |
+| Time-SampleProc         | 0.0776        |
+| Time-Sampling           | 18.6          |
+| n_timesteps             | 80000         |
+-------------------------------------------
+
+ ---------------- Iteration 2 ----------------
+Sampling set of tasks/goals for this meta-batch...
+Obtaining samples...
+Processing samples...
+Optimizing policy...
+Optimizing
+Computing statistics
+Saving snapshot...
+Saved
+------------------------------------------
+| AverageDiscountedReturn | 589          |
+| AverageReturn           | 613          |
+| Itr                     | 2            |
+| ItrTime                 | 19.1         |
+| LossAfter               | -0.0         |
+| LossBefore              | 5.812872e-09 |
+| MaxReturn               | 613          |
+| Meta-test-AveragePol... | 0.72005457   |
+| Meta-test-EnvExecTime   | 12.5         |
+| Meta-test-PolicyExec... | 5.46         |
+| MinReturn               | 613          |
+| NumTrajs                | 280          |
+| StdReturn               | 0            |
+| Time                    | 56.9         |
+| Time-Optimization       | 0.228        |
+| Time-SampleProc         | 0.0583       |
+| Time-Sampling           | 18.8         |
+| n_timesteps             | 120000       |
+------------------------------------------
+
+ ---------------- Iteration 3 ----------------
+Sampling set of tasks/goals for this meta-batch...
+Obtaining samples...
+Processing samples...
+Optimizing policy...
+Optimizing
+Computing statistics
+Saving snapshot...
+Saved
+------------------------------------------
+| AverageDiscountedReturn | 589          |
+| AverageReturn           | 613          |
+| Itr                     | 3            |
+| ItrTime                 | 18.9         |
+| LossAfter               | -0.0         |
+| LossBefore              | 5.812872e-09 |
+| MaxReturn               | 613          |
+| Meta-test-AveragePol... | 0.7087955    |
+| Meta-test-EnvExecTime   | 12.5         |
+| Meta-test-PolicyExec... | 5.35         |
+| MinReturn               | 613          |
+| NumTrajs                | 280          |
+| StdReturn               | 0            |
+| Time                    | 75.8         |
+| Time-Optimization       | 0.208        |
+| Time-SampleProc         | 0.0621       |
+| Time-Sampling           | 18.6         |
+| n_timesteps             | 160000       |
+------------------------------------------
+
+ ---------------- Iteration 4 ----------------
+Sampling set of tasks/goals for this meta-batch...
+Obtaining samples...
+Processing samples...
+Optimizing policy...
+Optimizing
+Computing statistics
+Saving snapshot...
+Saved
+-------------------------------------------
+| AverageDiscountedReturn | 589           |
+| AverageReturn           | 613           |
+| Itr                     | 4             |
+| ItrTime                 | 18.8          |
+| LossAfter               | -0.0          |
+| LossBefore              | -5.740211e-08 |
+| MaxReturn               | 613           |
+| Meta-test-AveragePol... | 0.69182587    |
+| Meta-test-EnvExecTime   | 12.4          |
+| Meta-test-PolicyExec... | 5.33          |
+| MinReturn               | 613           |
+| NumTrajs                | 280           |
+| StdReturn               | 0.00105       |
+| Time                    | 94.7          |
+| Time-Optimization       | 0.205         |
+| Time-SampleProc         | 0.0583        |
+| Time-Sampling           | 18.6          |
+| n_timesteps             | 200000        |
+-------------------------------------------
+
+ ---------------- Iteration 5 ----------------
+Sampling set of tasks/goals for this meta-batch...
+Obtaining samples...

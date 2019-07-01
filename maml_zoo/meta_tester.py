@@ -88,6 +88,10 @@ class Tester(object):
                 time_proc_samples_start = time.time()
                 samples_data = self.sample_processor.process_samples(paths, log='all', log_prefix='Meta-test-')
                 proc_samples_time = time.time() - time_proc_samples_start
+                # all_paths = []
+                # for i in range(len(paths)):
+                #     all_paths.extend(paths[i])
+                # paths = all_paths
 
                 self.log_diagnostics(paths, prefix='Meta-test-')
 

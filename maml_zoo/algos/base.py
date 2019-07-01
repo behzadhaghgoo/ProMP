@@ -129,6 +129,8 @@ class Algo(object):
             elif isinstance(data, np.ndarray):
                 input_dict['%s_%s' % (prefix, key)] = data
             else:
+                import ipdb
+                ipdb.set_trace()
                 raise NotImplementedError
         return input_dict
 
