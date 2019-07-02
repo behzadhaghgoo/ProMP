@@ -17,5 +17,5 @@
     "max_epochs": 5,
     "cell_type": "lstm",
     "num_minibatches": 1,
-    "n_itr": 500
+    "n_itr": 10000
 }

@@ -106,5 +106,5 @@ if __name__=="__main__":
     logger.configure(dir='./data/rl2/test_{}_{}_{}'.format(TASKNAME, idx, timestamp), format_strs=['stdout', 'log', 'csv', 'json', 'tensorboard'],
                      snapshot_mode='gap', snapshot_gap=5,)
     config = json.load(open("./corl/rl2/configs/baby_mode_config{}.json".format(idx), 'r'))
-    json.dump(config, open('./data/rl2/test_{}_{}_{}/params.json'.format(TASKNAME, idx, timestamp, 'w'))
+    json.dump(config, open('./data/rl2/test_{}_{}_{}/params.json'.format(TASKNAME, idx, timestamp), 'w'))
     main(config)
