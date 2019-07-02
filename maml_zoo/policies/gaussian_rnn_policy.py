@@ -206,6 +206,10 @@ class GaussianRNNPolicy(Policy):
             if isinstance(self._hidden_state, tf.contrib.rnn.LSTMStateTuple):
                 self._hidden_state.c[dones] = _hidden_state.c
                 self._hidden_state.h[dones] = _hidden_state.h
+            elif type(self._hidden_state) is tuple:
+                for t, u in zip(self._hidden_state, _hidden_state):
+                    t.c[dones] = u.c
+                    t.h[dones] = u.h
             else:
                 self._hidden_state[dones] = _hidden_state
 
@@ -217,5 +221,13 @@ class GaussianRNNPolicy(Policy):
             hidden_h = np.concatenate([_hidden_state.h] * batch_size)
             hidden = tf.contrib.rnn.LSTMStateTuple(hidden_c, hidden_h)
             return hidden
+        elif type(self._hidden_state) is tuple:
+            hiddens = []
+            for t, u in zip(self._hidden_state, _hidden_state):
+                h_c = np.concatenate([u.c] * batch_size)
+                h_h = np.concatenate([u.h] * batch_size)
+                h = tf.contrib.rnn.LSTMStateTuple(h_c, h_h)
+                hiddens.append(h)
+            return tuple(hiddens)
         else:
             return np.concatenate([_hidden_state] * batch_size)

@@ -120,3 +120,7 @@ venv.bak/
 
 # sandbox
 /sandbox
+
+mjkey.txt
+Pipfile
+Pipfile.lock
