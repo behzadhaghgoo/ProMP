@@ -10,7 +10,7 @@ class BabyModeWrapper(gym.Wrapper, Serializable):
 
     '''
     MAML sampler api
-    
+
     In baby mode, tasks will be reset in the environment reset
     function so we ignore task sampling/setting
 
@@ -18,7 +18,7 @@ class BabyModeWrapper(gym.Wrapper, Serializable):
     '''
     def sample_tasks(self, meta_batch_size):
         return [None] * meta_batch_size
-    
+
     def set_task(self, task):
         pass
 

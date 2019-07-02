@@ -1,7 +1,9 @@
 import argparse
+import datetime
 import os
 import json
 
+import dateutil.tz
 import numpy as np
 
 from maml_zoo.baselines.linear_baseline import LinearFeatureBaseline
@@ -98,10 +100,11 @@ if __name__=="__main__":
                     help='The index of variants to use for experiment')
     args = parser.parse_args()
 
-    rand_num = np.random.uniform()
+    now = datetime.datetime.now(dateutil.tz.tzlocal())
+    timestamp = now.strftime('%Y_%m_%d_%H_%M_%S')
     idx = args.variant_index
-    logger.configure(dir='./data/rl2/test_{}_{}_{}'.format(TASKNAME, idx, rand_num), format_strs=['stdout', 'log', 'csv'],
+    logger.configure(dir='./data/rl2/test_{}_{}_{}'.format(TASKNAME, idx, timestamp), format_strs=['stdout', 'log', 'csv', 'json', 'tensorboard'],
                      snapshot_mode='gap', snapshot_gap=5,)
     config = json.load(open("./corl/rl2/configs/baby_mode_config{}.json".format(idx), 'r'))
-    json.dump(config, open('./data/rl2/test_{}_{}_{}/params.json'.format(TASKNAME, idx, rand_num), 'w'))
+    json.dump(config, open('./data/rl2/test_{}_{}_{}/params.json'.format(TASKNAME, idx, timestamp, 'w'))
     main(config)
