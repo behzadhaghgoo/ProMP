@@ -51,6 +51,7 @@ def main(config):
             action_dim=np.prod(env.action_space.shape),
             meta_batch_size=config['meta_batch_size'],
             hidden_sizes=config['hidden_sizes'],
+            learn_std=True
         )
 
     sampler = MAMLSampler(
@@ -186,7 +187,7 @@ if __name__=="__main__":
             with open(pkl, 'rb') as file:
                 experiment = joblib.load(file)
             logger.configure(dir=maml_zoo_path + '/data/trpo/test_{}_{}_{}'.format(TASKNAME, idx, rand_num), format_strs=['stdout', 'log', 'csv'],
-                     snapshot_mode='gap', snapshot_gap=5,)
+                     snapshot_mode='all')
             config = json.load(open(config, 'r'))
             json.dump(config, open(maml_zoo_path + '/data/trpo/test_{}_{}_{}/params.json'.format(TASKNAME, idx, rand_num), 'w'))
             resume(experiment, config, sess, itr)
