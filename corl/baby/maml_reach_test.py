@@ -90,7 +90,7 @@ def maml_test(experiment, config, sess, start_itr):
         start_itr=start_itr,
     )
 
-    trainer.train()
+    trainer.train(test_time=True)
 
 
 if __name__=="__main__":
@@ -122,7 +122,7 @@ if __name__=="__main__":
             with open(pkl, 'rb') as file:
                 experiment = joblib.load(file)
             logger.configure(dir=maml_zoo_path + '/data/maml_test/test_{}_{}_{}'.format(TASKNAME, idx, rand_num), format_strs=['stdout', 'log', 'csv'],
-                     snapshot_mode='gap', snapshot_gap=5,)
+                     snapshot_mode='all',)
             config = json.load(open(config, 'r'))
             json.dump(config, open(maml_zoo_path + '/data/maml_test/test_{}_{}_{}/params.json'.format(TASKNAME, idx, rand_num), 'w'))
             maml_test(experiment, config, sess, itr)
