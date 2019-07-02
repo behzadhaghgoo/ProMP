@@ -121,10 +121,10 @@ if __name__=="__main__":
         with tf.Session() as sess:
             with open(pkl, 'rb') as file:
                 experiment = joblib.load(file)
-            logger.configure(dir=maml_zoo_path + '/data/trpo/test_{}_{}_{}'.format(TASKNAME, idx, rand_num), format_strs=['stdout', 'log', 'csv'],
+            logger.configure(dir=maml_zoo_path + '/data/maml_test/test_{}_{}_{}'.format(TASKNAME, idx, rand_num), format_strs=['stdout', 'log', 'csv'],
                      snapshot_mode='gap', snapshot_gap=5,)
             config = json.load(open(config, 'r'))
-            json.dump(config, open(maml_zoo_path + '/data/trpo/test_{}_{}_{}/params.json'.format(TASKNAME, idx, rand_num), 'w'))
+            json.dump(config, open(maml_zoo_path + '/data/maml_test/test_{}_{}_{}/params.json'.format(TASKNAME, idx, rand_num), 'w'))
             maml_test(experiment, config, sess, itr)
     else:
         print('Please provide a pkl file')
