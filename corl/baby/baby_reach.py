@@ -25,8 +25,8 @@ TASKNAME = 'reach'
 
 def main(config):
 
-    goal_low = np.array((-0.1, 0.8, 0.05))
-    goal_high = np.array((0.1, 0.9, 0.3))
+    goal_low = np.array((-0.05, 0.8, 0.15))
+    goal_high = np.array((0.05, 0.9, 0.25))
 
     goals = np.random.uniform(low=goal_low, high=goal_high, size=(N_TASKS, len(goal_low))).tolist()
     print(goals)
