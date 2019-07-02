@@ -241,6 +241,7 @@ class MAMLAlgo(MetaAlgo):
 
         # store the new parameter values in the policy
         self.policy.update_task_parameters(adapted_policies_params_vals)
+        return adapted_policies_params_vals
 
 
     def _extract_input_dict(self, samples_data_meta_batch, keys, prefix=''):

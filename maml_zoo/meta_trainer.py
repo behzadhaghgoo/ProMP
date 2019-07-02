@@ -45,7 +45,7 @@ class Trainer(object):
             sess = tf.Session()
         self.sess = sess
 
-    def train(self):
+    def train(self, test_time=False):
         """
         Trains policy on env using algo
 
@@ -101,9 +101,19 @@ class Trainer(object):
                     time_inner_step_start = time.time()
                     if step < self.num_inner_grad_steps:
                         logger.log("Computing inner policy updates...")
-                        self.algo._adapt(samples_data)
-                    # train_writer = tf.summary.FileWriter('/home/ignasi/Desktop/maml_zoo_graph',
-                    #                                      sess.graph)
+                        adapted_params = self.algo._adapt(samples_data)
+                    elif test_time:
+                        # We use the trainer to test
+                        # Here we just need to evaluate the collected data since
+                        # at this point, the policy is adapted.
+                        logger.log("Done with collecting and processing test data.")
+                        logger.log("{} gradient steps performed.".format(step))
+                        logger.log("Saving data now.")
+                        params = self.get_itr_snapshot(itr)
+                        import ipdb
+                        ipdb.set_trace()
+                        return
+
                     list_inner_step_time.append(time.time() - time_inner_step_start)
                 total_inner_time = time.time() - start_total_inner_time
 
