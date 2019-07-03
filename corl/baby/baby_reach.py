@@ -19,7 +19,7 @@ from baby_wrapper import BabyModeWrapper
 
 maml_zoo_path = '/'.join(os.path.realpath(os.path.dirname(__file__)).split('/')[:-1])
 
-N_TASKS = 50
+N_TASKS = 2000
 TASKNAME = 'reach'
 
 
