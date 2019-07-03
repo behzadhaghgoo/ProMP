@@ -18,5 +18,4 @@
     "step_size": 0.01,
     "inner_type": "log_likelihood",
     "n_itr": 1000000
-  }
-  
+}
