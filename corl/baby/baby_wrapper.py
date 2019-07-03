@@ -1,4 +1,5 @@
 import gym
+import numpy as np
 from maml_zoo.utils import Serializable
 
 
