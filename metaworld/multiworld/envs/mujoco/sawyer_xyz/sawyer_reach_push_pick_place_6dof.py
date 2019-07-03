@@ -318,6 +318,7 @@ class SawyerReachPushPickPlace6DOFEnv(SawyerXYZEnv):
             else:
                 task = self.sample_task()
         else:
+            print(self.task_idx)
             task = self.tasks[self.task_idx]
         self.task_type = task['type']
         self._state_goal = np.array(task['goal'])
