@@ -80,7 +80,7 @@ def main(config):
     algo = PPOMAML(
         policy=policy,
         # step_size=config['step_size'],
-        inner_type=config['inner_type'],
+        # inner_type=config['inner_type'],
         meta_batch_size=config['meta_batch_size'],
         num_inner_grad_steps=config['num_inner_grad_steps'],
         inner_lr=config['inner_lr'],
