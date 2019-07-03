@@ -21,7 +21,7 @@ class BabyModeWrapper(gym.Wrapper, Serializable):
         return np.random.randint(0, self.num_tasks, size=meta_batch_size)
     
     def set_task(self, task):
-        env.task_idx = task
+        self.env.task_idx = task
 
     def log_diagnostics(self, paths, prefix):
         pass
