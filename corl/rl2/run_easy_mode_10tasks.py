@@ -4,7 +4,9 @@ import os
 import json
 
 import dateutil.tz
+import joblib
 import numpy as np
+import tensorflow as tf
 
 from maml_zoo.baselines.linear_baseline import LinearFeatureBaseline
 from maml_zoo.envs.multitask_env import MultiClassMultiTaskEnv
@@ -22,6 +24,7 @@ maml_zoo_path = '/'.join(os.path.realpath(os.path.dirname(__file__)).split('/')[
 
 
 def main(config):
+
     from env_list import EASY_MODE_DICT, EASY_MODE_ARGS_KWARGS
 
     baseline = LinearFeatureBaseline()
@@ -75,17 +78,92 @@ def main(config):
     trainer.train()
 
 
+def resume(experiment, config, sess, start_itr):
+
+    from env_list import EASY_MODE_DICT, EASY_MODE_ARGS_KWARGS
+
+    baseline = LinearFeatureBaseline()
+    env = MultiClassMultiTaskEnv(
+        task_env_cls_dict=EASY_MODE_DICT,
+        task_args_kwargs=EASY_MODE_ARGS_KWARGS)
+
+    policy = experiment['policy']
+
+    sampler = MAMLSampler(
+        env=env,
+        policy=policy,
+        rollouts_per_meta_task=config['rollouts_per_meta_task'],  # This batch_size is confusing
+        meta_batch_size=config['meta_batch_size'],
+        max_path_length=config['max_path_length'],
+        parallel=config['parallel'],
+        envs_per_task=config['envs_per_task']
+    )
+
+    sample_processor = RL2SampleProcessor(
+        baseline=baseline,
+        discount=config['discount'],
+        gae_lambda=config['gae_lambda'],
+        normalize_adv=config['normalize_adv'],
+        positive_adv=config['positive_adv'],
+    )
+
+    algo = PPO(
+        policy=policy,
+        learning_rate=config['learning_rate'],
+        max_epochs=config['max_epochs'],
+    )
+
+    trainer = Trainer(
+        algo=algo,
+        policy=policy,
+        env=env,
+        sampler=sampler,
+        sample_processor=sample_processor,
+        n_itr=config['n_itr'],
+        sess=sess,
+        start_itr=start_itr,
+    )
+
+    trainer.train()
+
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='Play a pickled policy.')
     parser.add_argument('variant_index', metavar='variant_index', type=int,
                     help='The index of variants to use for experiment')
+    parser.add_argument('--pkl', metavar='pkl', type=str,
+                    help='The path of the pkl file',
+                    default=None, required=False)
+    parser.add_argument('--config', metavar='config', type=str,
+                    help='The path to the config file',
+                    default=None, required=False)
+    parser.add_argument('--itr', metavar='itr', type=int,
+                    help='The start itr of the resuming experiment',
+                    default=0, required=False)
     args = parser.parse_args()
 
     now = datetime.datetime.now(dateutil.tz.tzlocal())
     timestamp = now.strftime('%Y_%m_%d_%H_%M_%S')
+
     idx = args.variant_index
-    logger.configure(dir='./data/rl2/test_{}_{}'.format(idx, timestamp), format_strs=['stdout', 'log', 'csv', 'json', 'tensorboard'],
+    pkl = args.pkl
+    config = args.config
+    itr = args.itr
+
+    if not config:
+        config = json.load(open("./corl/rl2/configs/easy_mode_config{}.json".format(idx), 'r'))
+
+    if pkl:
+        with tf.Session() as sess:
+            with open(pkl, 'rb') as file:
+                experiment = joblib.load(file)
+            logger.configure(dir='./data/rl2/test_{}_{}'.format(idx, timestamp), format_strs=['stdout', 'log', 'csv', 'json', 'tensorboard'],
                      snapshot_mode='gap', snapshot_gap=5,)
-    config = json.load(open("./corl/rl2/configs/easy_mode_config{}.json".format(idx), 'r'))
-    json.dump(config, open(maml_zoo_path + '/data/rl2/test_{}_{}/params.json'.format(idx, timestamp), 'w'))
-    main(config)
+            config = json.load(open(config, 'r'))
+            json.dump(config, open('./data/rl2/test_{}_{}/params.json'.format(idx, timestamp), 'w'))
+            resume(experiment, config, sess, itr)
+    else:
+        logger.configure(dir='./data/rl2/test_{}_{}'.format(idx, timestamp), format_strs=['stdout', 'log', 'csv', 'json', 'tensorboard'],
+                     snapshot_mode='gap', snapshot_gap=5,)
+        config = json.load(open("./corl/rl2/configs/easy_mode_config{}.json".format(idx), 'r'))
+        json.dump(config, open('./data/rl2/test_{}_{}/params.json'.format(idx, timestamp), 'w'))
+        main(config)
