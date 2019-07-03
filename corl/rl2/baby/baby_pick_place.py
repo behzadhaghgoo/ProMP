@@ -26,8 +26,8 @@ TASKNAME = 'pick_place'
 
 def main(config):
 
-    goal_low = np.array((0.1 - 1e-2, 0.8 - 1e-2, 0.2))
-    goal_high = np.array((0.1 + 1e-2, 0.8 + 1e-2, 0.2))
+    goal_low = np.array((0.05, 0.8, 0.1))
+    goal_high = np.array((0.15, 0.9, 0.2))
 
     goals = np.random.uniform(low=goal_low, high=goal_high, size=(N_TASKS, len(goal_low))).tolist()
     print(goals)
@@ -54,7 +54,8 @@ def main(config):
         action_dim=np.prod(env.action_space.shape),
         meta_batch_size=config['meta_batch_size'],
         hidden_sizes=config['hidden_sizes'],
-        cell_type=config['cell_type']
+        cell_type=config['cell_type'],
+        init_std=2.,
     )
 
     sampler = MAMLSampler(
