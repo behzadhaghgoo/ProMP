@@ -27,8 +27,8 @@ TASKNAME = 'pick_place'
 
 def main(config):
 
-    goal_low = np.array((-0.1, 0.8, 0.2))
-    goal_high = np.array((0.1, 0.9, 0.2))
+    goal_low = np.array((0.05, 0.8, 0.2))
+    goal_high = np.array((0.15, 0.9, 0.2))
 
     goals = np.random.uniform(low=goal_low, high=goal_high, size=(N_TASKS, len(goal_low))).tolist()
     print(goals)
@@ -54,6 +54,7 @@ def main(config):
             meta_batch_size=config['meta_batch_size'],
             hidden_sizes=config['hidden_sizes'],
             init_std=2.,
+            learn_std=True,
         )
 
     sampler = MAMLSampler(
