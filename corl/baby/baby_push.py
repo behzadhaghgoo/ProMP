@@ -45,6 +45,7 @@ def main(config):
         obs_type='plain',
         if_render=False,
         tasks=tasks,
+        fix_task=True,
     ))
 
     policy = MetaGaussianMLPPolicy(
