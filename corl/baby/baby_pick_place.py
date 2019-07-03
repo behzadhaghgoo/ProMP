@@ -54,7 +54,7 @@ def main(config):
             action_dim=np.prod(env.action_space.shape),
             meta_batch_size=config['meta_batch_size'],
             hidden_sizes=config['hidden_sizes'],
-            init_std=3.,
+            init_std=4.,
             learn_std=True,
         )
 
@@ -83,7 +83,7 @@ def main(config):
         meta_batch_size=config['meta_batch_size'],
         num_inner_grad_steps=config['num_inner_grad_steps'],
         inner_lr=config['inner_lr'],
-        exploration=True
+        # exploration=True
     )
 
     trainer = Trainer(
