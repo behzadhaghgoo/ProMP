@@ -11,6 +11,7 @@ import tensorflow as tf
 from maml_zoo.baselines.linear_baseline import LinearFeatureBaseline
 from maml_zoo.logger import logger
 from maml_zoo.meta_algos.trpo_maml import TRPOMAML
+from maml_zoo.meta_algos.ppo_maml import PPOMAML
 from maml_zoo.meta_trainer import Trainer
 from maml_zoo.policies.meta_gaussian_mlp_policy import MetaGaussianMLPPolicy
 from maml_zoo.samplers.maml_sampler import MAMLSampler
@@ -76,14 +77,13 @@ def main(config):
         positive_adv=config['positive_adv'],
     )
 
-    algo = TRPOMAML(
+    algo = PPOMAML(
         policy=policy,
         step_size=config['step_size'],
         inner_type=config['inner_type'],
         meta_batch_size=config['meta_batch_size'],
         num_inner_grad_steps=config['num_inner_grad_steps'],
         inner_lr=config['inner_lr'],
-        # exploration=True
     )
 
     trainer = Trainer(
