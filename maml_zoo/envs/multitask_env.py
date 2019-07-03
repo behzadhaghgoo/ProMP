@@ -3,6 +3,8 @@ from maml_zoo.utils import Serializable
 import gym
 import numpy as np
 
+from multiworld.envs.mujoco.random_init_wrapper import generate_random_init_configs, RandomInitWrapper
+
 
 class MultiTaskEnv(gym.Env, Serializable):
     def __init__(self,
@@ -82,7 +84,9 @@ class MultiClassMultiTaskEnv(MultiTaskEnv):
     def __init__(self,
                  task_env_cls_dict=None,
                  task_args_kwargs=None,
-                 sampled_tasks=None,):
+                 sampled_tasks=None,
+                 random_init=False,
+                 n_random_init=5):
         Serializable.quick_init(self, locals())
 
         assert len(task_env_cls_dict.keys()) == len(task_args_kwargs.keys())
@@ -95,7 +99,15 @@ class MultiClassMultiTaskEnv(MultiTaskEnv):
         for task, env_cls in task_env_cls_dict.items():
             task_args = task_args_kwargs[task]['args']
             task_kwargs = task_args_kwargs[task]['kwargs']
-            self._task_envs.append(env_cls(*task_args, **task_kwargs))
+            if random_init:
+                domain, inits = generate_random_init_configs(task, n_random_init)
+                task_env = RandomInitWrapper(
+                    env_cls(*task_args, **task_kwargs),
+                    domain=domain,
+                    initial_configurations=inits,)
+            else:
+                task_env = env_cls(*task_args, **task_kwargs)
+            self._task_envs.append(task_env)
             self._task_names.append(task)
 
         self._active_task = None
