@@ -145,6 +145,7 @@ def resume(experiment, config, sess, start_itr):
         meta_batch_size=config['meta_batch_size'],
         num_inner_grad_steps=config['num_inner_grad_steps'],
         inner_lr=config['inner_lr']
+        exploration=True,
     )
 
     trainer = Trainer(
