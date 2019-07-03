@@ -40,7 +40,8 @@ def main(config):
         action_dim=np.prod(env.action_space.shape),
         meta_batch_size=config['meta_batch_size'],
         hidden_sizes=config['hidden_sizes'],
-        cell_type=config['cell_type']
+        cell_type=config['cell_type'],
+        init_std=2.
     )
 
     sampler = MAMLSampler(
