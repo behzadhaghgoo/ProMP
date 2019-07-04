@@ -2,9 +2,8 @@
   "algo": "TRPO-MAML",
   "meta_batch_size": 20,
   "hidden_sizes": [
-    400,
-    400,
-    400
+    300,
+    300
   ],
   "envs_per_task": 1,
   "rollouts_per_meta_task": 20,
