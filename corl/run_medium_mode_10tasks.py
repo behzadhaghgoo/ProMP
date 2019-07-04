@@ -1,6 +1,8 @@
 import argparse
+import datetime
 import os
 
+import dateutil.tz
 import joblib
 import json
 import numpy as np
@@ -142,11 +144,12 @@ if __name__=="__main__":
                     default=0, required=False)
     args = parser.parse_args()
 
-    rand_num = np.random.uniform()
     idx = args.variant_index
     pkl = args.pkl
     config = args.config
     itr = args.itr
+    now = datetime.datetime.now(dateutil.tz.tzlocal())
+    timestamp = now.strftime('%Y_%m_%d_%H_%M_%S')
 
     if not config:
         config = json.load(open("./corl/configs/medium_mode_config{}.json".format(idx), 'r'))
@@ -155,14 +158,14 @@ if __name__=="__main__":
         with tf.Session() as sess:
             with open(pkl, 'rb') as file:
                 experiment = joblib.load(file)
-            logger.configure(dir=maml_zoo_path + '/data/trpo/test_{}_{}'.format(idx, rand_num), format_strs=['stdout', 'log', 'csv'],
+            logger.configure(dir=maml_zoo_path + '/data/trpo/test_{}_{}'.format(idx, timestamp), format_strs=['stdout', 'log', 'csv'],
                      snapshot_mode='gap', snapshot_gap=5,)
             config = json.load(open(config, 'r'))
-            json.dump(config, open(maml_zoo_path + '/data/trpo/test_{}_{}/params.json'.format(idx, rand_num), 'w'))
+            json.dump(config, open(maml_zoo_path + '/data/trpo/test_{}_{}/params.json'.format(idx, timestamp), 'w'))
             resume(experiment, config, sess, itr)
     else:
-        logger.configure(dir=maml_zoo_path + '/data/trpo/test_{}_{}'.format(idx, rand_num), format_strs=['stdout', 'log', 'csv'],
+        logger.configure(dir=maml_zoo_path + '/data/trpo/test_{}_{}'.format(idx, timestamp), format_strs=['stdout', 'log', 'csv'],
                      snapshot_mode='gap', snapshot_gap=5,)
         config = json.load(open("./corl/configs/medium_mode_config{}.json".format(idx), 'r'))
-        json.dump(config, open(maml_zoo_path + '/data/trpo/test_{}_{}/params.json'.format(idx, rand_num), 'w'))
+        json.dump(config, open(maml_zoo_path + '/data/trpo/test_{}_{}/params.json'.format(idx, timestamp), 'w'))
         main(config)
