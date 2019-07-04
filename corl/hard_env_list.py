@@ -58,7 +58,7 @@ def hard_mode_args_kwargs(env_cls):
                 'obj_init_pos':np.array([0, 0.6, 0.015]),
                 'obj_init_angle': 0.3,
                 'type': 'push',}]
-        _reach_push_pick_place_wall += 1            
+        _reach_push_pick_place_wall += 1
     return dict(args=[], kwargs=kwargs)
 
 
