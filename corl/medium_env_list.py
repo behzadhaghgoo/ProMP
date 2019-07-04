@@ -67,7 +67,7 @@ TEST_DICT = {
 }
 
 TRAIN_ARGS_KWARGS = {
-        'reach': {
+    'reach': {
         "args": [],
         "kwargs": {
             'tasks': [{'goal': np.array([-0.1, 0.8, 0.2]),  'obj_init_pos':np.array([0, 0.6, 0.02]), 'obj_init_angle': 0.3, 'type':'reach'}],
@@ -117,16 +117,16 @@ TRAIN_ARGS_KWARGS = {
             'random_init': True,   
         }
     },
-    'drawer_close': {
-        "args": [],
-        "kwargs": {
-            'tasks': [{'goal': np.array([0., 0.7, 0.04]),  'obj_init_pos':np.array([0., 0.9, 0.04]), 'obj_init_angle': 0.3}],
-            'multitask': False,
-            'obs_type': 'plain',
-            'if_render': False,
-            'random_init': True,   
-        }
-    },
+    # 'drawer_close': {
+    #     "args": [],
+    #     "kwargs": {
+    #         'tasks': [{'goal': np.array([0., 0.7, 0.04]),  'obj_init_pos':np.array([0., 0.9, 0.04]), 'obj_init_angle': 0.3}],
+    #         'multitask': False,
+    #         'obs_type': 'plain',
+    #         'if_render': False,
+    #         'random_init': True,   
+    #     }
+    # },
     'button_press_top_down': {
         "args": [],
         "kwargs": {
