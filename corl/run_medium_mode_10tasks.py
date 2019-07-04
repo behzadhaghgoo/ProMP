@@ -22,12 +22,12 @@ maml_zoo_path = '/'.join(os.path.realpath(os.path.dirname(__file__)).split('/')[
 
 
 def main(config):
-    from medium_env_list import TRAIN_DICT, MEDIUM_MODE_ARGS_KWARGS
+    from medium_env_list import TRAIN_DICT, TRAIN_ARGS_KWARGS
 
     baseline = LinearFeatureBaseline()
     env = MultiClassMultiTaskEnv(
         task_env_cls_dict=TRAIN_DICT,
-        task_args_kwargs=MEDIUM_MODE_ARGS_KWARGS)
+        task_args_kwargs=TRAIN_ARGS_KWARGS)
 
     policy = MetaGaussianMLPPolicy(
             name="meta-policy",
@@ -78,12 +78,12 @@ def main(config):
 
 def resume(experiment, config, sess, start_itr):
 
-    from medium_env_list import TRAIN_DICT, MEDIUM_MODE_ARGS_KWARGS
+    from medium_env_list import TRAIN_DICT, TRAIN_ARGS_KWARGS
 
     baseline = LinearFeatureBaseline()
     env = MultiClassMultiTaskEnv(
         task_env_cls_dict=TRAIN_DICT,
-        task_args_kwargs=MEDIUM_MODE_ARGS_KWARGS)
+        task_args_kwargs=TRAIN_ARGS_KWARGS)
 
     policy = experiment['policy']
 
