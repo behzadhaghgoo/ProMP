@@ -62,7 +62,7 @@ def hard_mode_args_kwargs(env_cls):
     return dict(args=[], kwargs=kwargs)
 
 
-HARD_MODE_ARGS_KWARGS = {
+TRAIN_ARGS_KWARGS = {
     i: hard_mode_args_kwargs(env)
     for i, env in enumerate(HARD_MODE_LIST)
 }
