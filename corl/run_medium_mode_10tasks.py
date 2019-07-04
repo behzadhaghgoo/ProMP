@@ -149,7 +149,7 @@ if __name__=="__main__":
     itr = args.itr
 
     if not config:
-        config = json.load(open("./corl/configs/easy_mode_config{}.json".format(idx), 'r'))
+        config = json.load(open("./corl/configs/medium_mode_config{}.json".format(idx), 'r'))
     
     if pkl:
         with tf.Session() as sess:
