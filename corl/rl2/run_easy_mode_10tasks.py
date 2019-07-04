@@ -84,9 +84,9 @@ def resume(experiment, config, sess, start_itr):
     from env_list import EASY_MODE_DICT, EASY_MODE_ARGS_KWARGS
 
     baseline = LinearFeatureBaseline()
-    env = MultiClassMultiTaskEnv(
+    env = rl2env(MultiClassMultiTaskEnv(
         task_env_cls_dict=EASY_MODE_DICT,
-        task_args_kwargs=EASY_MODE_ARGS_KWARGS)
+        task_args_kwargs=EASY_MODE_ARGS_KWARGS))
 
     policy = experiment['policy']
 

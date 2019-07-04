@@ -1,21 +1,22 @@
 import argparse
 import datetime
 import os
+import json
 
 import dateutil.tz
 import joblib
-import json
 import numpy as np
 import tensorflow as tf
 
 from maml_zoo.baselines.linear_baseline import LinearFeatureBaseline
 from maml_zoo.envs.multitask_env import MultiClassMultiTaskEnv
-from maml_zoo.logger import logger
-from maml_zoo.meta_algos.trpo_maml import TRPOMAML
-from maml_zoo.meta_trainer import Trainer
-from maml_zoo.policies.meta_gaussian_mlp_policy import MetaGaussianMLPPolicy
+from maml_zoo.envs.rl2_env import rl2env
+from maml_zoo.algos.ppo import PPO
+from maml_zoo.trainer import Trainer
 from maml_zoo.samplers.maml_sampler import MAMLSampler
-from maml_zoo.samplers.maml_sample_processor import MAMLSampleProcessor
+from maml_zoo.samplers.rl2_sample_processor import RL2SampleProcessor
+from maml_zoo.policies.gaussian_rnn_policy import GaussianRNNPolicy
+from maml_zoo.logger import logger
 
 
 maml_zoo_path = '/'.join(os.path.realpath(os.path.dirname(__file__)).split('/')[:-1])
@@ -25,17 +26,21 @@ def main(config):
     from hard_env_list import TRAIN_DICT, TRAIN_ARGS_KWARGS
 
     baseline = LinearFeatureBaseline()
-    env = MultiClassMultiTaskEnv(
+    env = rl2env(MultiClassMultiTaskEnv(
         task_env_cls_dict=TRAIN_DICT,
-        task_args_kwargs=TRAIN_ARGS_KWARGS)
+        task_args_kwargs=TRAIN_ARGS_KWARGS))
 
-    policy = MetaGaussianMLPPolicy(
-            name="meta-policy",
-            obs_dim=np.prod(env.observation_space.shape),
-            action_dim=np.prod(env.action_space.shape),
-            meta_batch_size=config['meta_batch_size'],
-            hidden_sizes=config['hidden_sizes'],
-        )
+    obs_dim = np.prod(env.observation_space.shape) + np.prod(env.action_space.shape) + 1 + 1
+
+    policy = GaussianRNNPolicy(
+        name="meta-policy",
+        obs_dim=obs_dim,
+        action_dim=np.prod(env.action_space.shape),
+        meta_batch_size=config['meta_batch_size'],
+        hidden_sizes=config['hidden_sizes'],
+        cell_type=config['cell_type'],
+        init_std=2.
+    )
 
     sampler = MAMLSampler(
         env=env,
@@ -47,7 +52,7 @@ def main(config):
         envs_per_task=config['envs_per_task']
     )
 
-    sample_processor = MAMLSampleProcessor(
+    sample_processor = RL2SampleProcessor(
         baseline=baseline,
         discount=config['discount'],
         gae_lambda=config['gae_lambda'],
@@ -55,13 +60,10 @@ def main(config):
         positive_adv=config['positive_adv'],
     )
 
-    algo = TRPOMAML(
+    algo = PPO(
         policy=policy,
-        step_size=config['step_size'],
-        inner_type=config['inner_type'],
-        meta_batch_size=config['meta_batch_size'],
-        num_inner_grad_steps=config['num_inner_grad_steps'],
-        inner_lr=config['inner_lr'],
+        learning_rate=config['learning_rate'],
+        max_epochs=config['max_epochs'],
     )
 
     trainer = Trainer(
@@ -71,7 +73,6 @@ def main(config):
         sampler=sampler,
         sample_processor=sample_processor,
         n_itr=config['n_itr'],
-        num_inner_grad_steps=config['num_inner_grad_steps'],  # This is repeated in MAMLPPO, it's confusing
     )
     trainer.train()
 
@@ -81,9 +82,9 @@ def resume(experiment, config, sess, start_itr):
     from hard_env_list import TRAIN_DICT, TRAIN_ARGS_KWARGS
 
     baseline = LinearFeatureBaseline()
-    env = MultiClassMultiTaskEnv(
+    env = rl2env(MultiClassMultiTaskEnv(
         task_env_cls_dict=TRAIN_DICT,
-        task_args_kwargs=TRAIN_ARGS_KWARGS)
+        task_args_kwargs=TRAIN_ARGS_KWARGS))
 
     policy = experiment['policy']
 
@@ -97,7 +98,7 @@ def resume(experiment, config, sess, start_itr):
         envs_per_task=config['envs_per_task']
     )
 
-    sample_processor = MAMLSampleProcessor(
+    sample_processor = RL2SampleProcessor(
         baseline=baseline,
         discount=config['discount'],
         gae_lambda=config['gae_lambda'],
@@ -105,13 +106,10 @@ def resume(experiment, config, sess, start_itr):
         positive_adv=config['positive_adv'],
     )
 
-    algo = TRPOMAML(
+    algo = PPO(
         policy=policy,
-        step_size=config['step_size'],
-        inner_type=config['inner_type'],
-        meta_batch_size=config['meta_batch_size'],
-        num_inner_grad_steps=config['num_inner_grad_steps'],
-        inner_lr=config['inner_lr']
+        learning_rate=config['learning_rate'],
+        max_epochs=config['max_epochs'],
     )
 
     trainer = Trainer(
@@ -121,7 +119,6 @@ def resume(experiment, config, sess, start_itr):
         sampler=sampler,
         sample_processor=sample_processor,
         n_itr=config['n_itr'],
-        num_inner_grad_steps=config['num_inner_grad_steps'],  # This is repeated in MAMLPPO, it's confusing
         sess=sess,
         start_itr=start_itr,
     )
@@ -134,38 +131,39 @@ if __name__=="__main__":
     parser.add_argument('variant_index', metavar='variant_index', type=int,
                     help='The index of variants to use for experiment')
     parser.add_argument('--pkl', metavar='pkl', type=str,
-                    help='The path of the pkl file', 
+                    help='The path of the pkl file',
                     default=None, required=False)
     parser.add_argument('--config', metavar='config', type=str,
-                    help='The path to the config file', 
+                    help='The path to the config file',
                     default=None, required=False)
     parser.add_argument('--itr', metavar='itr', type=int,
-                    help='The start itr of the resuming experiment', 
+                    help='The start itr of the resuming experiment',
                     default=0, required=False)
     args = parser.parse_args()
+
+    now = datetime.datetime.now(dateutil.tz.tzlocal())
+    timestamp = now.strftime('%Y_%m_%d_%H_%M_%S')
 
     idx = args.variant_index
     pkl = args.pkl
     config = args.config
     itr = args.itr
-    now = datetime.datetime.now(dateutil.tz.tzlocal())
-    timestamp = now.strftime('%Y_%m_%d_%H_%M_%S')
 
     if not config:
-        config = json.load(open("./corl/configs/hard_mode_config{}.json".format(idx), 'r'))
-    
+        config = json.load(open("./corl/rl2/configs/hard_mode_config{}.json".format(idx), 'r'))
+
     if pkl:
         with tf.Session() as sess:
             with open(pkl, 'rb') as file:
                 experiment = joblib.load(file)
-            logger.configure(dir=maml_zoo_path + '/data/trpo/test_{}_{}'.format(idx, timestamp), format_strs=['stdout', 'log', 'csv'],
-                     snapshot_mode='all')
+            logger.configure(dir='./data/rl2/test_{}_{}'.format(idx, timestamp), format_strs=['stdout', 'log', 'csv', 'json', 'tensorboard'],
+                     snapshot_mode='gap', snapshot_gap=5,)
             config = json.load(open(config, 'r'))
-            json.dump(config, open(maml_zoo_path + '/data/trpo/test_{}_{}/params.json'.format(idx, timestamp), 'w'))
+            json.dump(config, open('./data/rl2/test_{}_{}/params.json'.format(idx, timestamp), 'w'))
             resume(experiment, config, sess, itr)
     else:
-        logger.configure(dir=maml_zoo_path + '/data/trpo/test_{}_{}'.format(idx, timestamp), format_strs=['stdout', 'log', 'csv'],
-                     snapshot_mode='all')
-        config = json.load(open("./corl/configs/hard_mode_config{}.json".format(idx), 'r'))
-        json.dump(config, open(maml_zoo_path + '/data/trpo/test_{}_{}/params.json'.format(idx, timestamp), 'w'))
+        logger.configure(dir='./data/rl2/test_{}_{}'.format(idx, timestamp), format_strs=['stdout', 'log', 'csv', 'json', 'tensorboard'],
+                     snapshot_mode='gap', snapshot_gap=5,)
+        config = json.load(open("./corl/rl2/configs/hard_mode_config{}.json".format(idx), 'r'))
+        json.dump(config, open('./data/rl2/test_{}_{}/params.json'.format(idx, timestamp), 'w'))
         main(config)
