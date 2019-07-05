@@ -188,7 +188,9 @@ if __name__=="__main__":
     pkl = args.pkl
     config = args.config
     itr = args.itr
-    set_seed(args.seed)
+    seed = args.seed
+
+    set_seed(seed)
     if not config:
         config = './corl/configs/baby_mode_config{}.json'.format(idx)
     
