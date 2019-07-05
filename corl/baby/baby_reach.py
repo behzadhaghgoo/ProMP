@@ -10,6 +10,7 @@ import tensorflow as tf
 
 from maml_zoo.baselines.linear_baseline import LinearFeatureBaseline
 from maml_zoo.logger import logger
+from maml_zoo.utils.utils import set_seed
 from maml_zoo.meta_algos.trpo_maml import TRPOMAML
 from maml_zoo.meta_trainer import Trainer
 from maml_zoo.policies.meta_gaussian_mlp_policy import MetaGaussianMLPPolicy
@@ -174,6 +175,9 @@ if __name__=="__main__":
     parser.add_argument('--itr', metavar='itr', type=int,
                     help='The start itr of the resuming experiment', 
                     default=0, required=False)
+    parser.add_argument('--seed', metavar='seed', type=int,
+                    help='The seed of running experiment', 
+                    default=0, required=False)
     args = parser.parse_args()
 
     now = datetime.datetime.now(dateutil.tz.tzlocal())
@@ -184,7 +188,7 @@ if __name__=="__main__":
     pkl = args.pkl
     config = args.config
     itr = args.itr
-
+    set_seed(args.seed)
     if not config:
         config = './corl/configs/baby_mode_config{}.json'.format(idx)
     
@@ -192,14 +196,14 @@ if __name__=="__main__":
         with tf.Session() as sess:
             with open(pkl, 'rb') as file:
                 experiment = joblib.load(file)
-            logger.configure(dir=maml_zoo_path + '/data/trpo/test_{}_{}_{}'.format(TASKNAME, idx, timestamp), format_strs=['stdout', 'log', 'csv'],
+            logger.configure(dir=maml_zoo_path + '/data/trpo/test_seed{}_{}_{}_{}'.format(seed, TASKNAME, idx, timestamp), format_strs=['stdout', 'log', 'csv'],
                      snapshot_mode='all')
             config = json.load(open(config, 'r'))
-            json.dump(config, open(maml_zoo_path + '/data/trpo/test_{}_{}_{}/params.json'.format(TASKNAME, idx, timestamp), 'w'))
+            json.dump(config, open(maml_zoo_path + '/data/trpo/test_seed{}_{}_{}_{}/params.json'.format(seed, TASKNAME, idx, timestamp), 'w'))
             resume(experiment, config, sess, itr)
     else:
-        logger.configure(dir=maml_zoo_path + '/data/trpo/test_{}_{}_{}'.format(TASKNAME, idx, timestamp), format_strs=['stdout', 'log', 'csv'],
+        logger.configure(dir=maml_zoo_path + '/data/trpo/test_seed{}_{}_{}_{}'.format(seed, TASKNAME, idx, timestamp), format_strs=['stdout', 'log', 'csv'],
                      snapshot_mode='all')
         config = json.load(open("./corl/configs/baby_mode_config{}.json".format(idx), 'r'))
-        json.dump(config, open(maml_zoo_path + '/data/trpo/test_{}_{}_{}/params.json'.format(TASKNAME, idx, timestamp), 'w'))
+        json.dump(config, open(maml_zoo_path + '/data/trpo/test_seed{}_{}_{}_{}/params.json'.format(seed, TASKNAME, idx, timestamp), 'w'))
         main(config)
