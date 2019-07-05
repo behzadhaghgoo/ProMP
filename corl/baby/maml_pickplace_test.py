@@ -20,7 +20,7 @@ from baby_wrapper import BabyModeWrapper
 maml_zoo_path = '/'.join(os.path.realpath(os.path.dirname(__file__)).split('/')[:-1])
 
 N_TASKS = 10
-TASKNAME = 'reach'
+TASKNAME = 'pick_place'
 
 
 def maml_test(experiment, config, sess, start_itr, pkl):
@@ -28,14 +28,14 @@ def maml_test(experiment, config, sess, start_itr, pkl):
     pickled_env = experiment['env'].env
     pickled_tasks = pickled_env.tasks
 
-    goal_low = np.array((-0.1, 0.8, 0.05))
-    goal_high = np.array((0.1, 0.9, 0.3))
+    goal_low = np.array((0.05, 0.8, 0.2))
+    goal_high = np.array((0.15, 0.9, 0.2))
 
     goals = np.random.uniform(low=goal_low, high=goal_high, size=(N_TASKS, len(goal_low))).tolist()
     print(goals)
 
     tasks =[
-        {'goal': np.array(g), 'obj_init_pos':np.array([0, 0.6, 0.02]), 'obj_init_angle': 0.3, 'type':'reach'}
+        {'goal': np.array(g), 'obj_init_pos':np.array([0, 0.6, 0.02]), 'obj_init_angle': 0.3, 'type':'pick_place'}
         for i, g in enumerate(goals)
     ]
 

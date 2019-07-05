@@ -2,7 +2,8 @@ import tensorflow as tf
 import numpy as np
 import time
 from maml_zoo.logger import logger
-
+from maml_zoo.utils import utils
+import os.path
 
 class Trainer(object):
     """
@@ -31,6 +32,7 @@ class Trainer(object):
             start_itr=0,
             num_inner_grad_steps=1,
             sess=None,
+            pkl=None,
             ):
         self.algo = algo
         self.env = env
@@ -44,6 +46,21 @@ class Trainer(object):
         if sess is None:
             sess = tf.Session()
         self.sess = sess
+        self.pkl = pkl
+
+        test_csv = '/root/code/ProMP/test_maml.csv'
+        if os.path.exists(test_csv):
+            self.test_csv = open(test_csv, 'a+')
+        else:
+            self.test_csv = open(test_csv, 'a+')
+            head = 'Itr,'
+            for meta_batch in range(algo.meta_batch_size):
+                meta_head = 'Task{},{},{},{},'.format(meta_batch, 'AverageDiscountedReturn', 'UndiscountedReturn', 'SuccessRate')
+                head += meta_head
+            head = head[:-1] + '\n'
+            print(head)
+            self.test_csv.write(head)
+            self.test_csv.flush()
 
     def train(self, test_time=False):
         """
@@ -109,9 +126,37 @@ class Trainer(object):
                         logger.log("Done with collecting and processing test data.")
                         logger.log("{} gradient steps performed.".format(step))
                         logger.log("Saving data now.")
-                        params = self.get_itr_snapshot(itr)
-                        import ipdb
-                        ipdb.set_trace()
+                        rollouts_per_meta_task = len(paths.items())
+                        rollout_task_paths = []
+                        for i in range(rollouts_per_meta_task):
+                            d = dict(returns=[], success=[], rewards=[])
+                            rollout_task_paths.append(d)
+
+                        for meta_task, meta_path in paths.items():
+                            for rollout_idx, rollout_path in enumerate(meta_path):
+                                rollout_path["returns"] = utils.discount_cumsum(rollout_path["rewards"], self.sample_processor.discount)
+                                rollout_task_paths[meta_task]["returns"].extend(rollout_path["returns"])
+                                rollout_task_paths[meta_task]["rewards"].extend(rollout_path["rewards"])
+                                if "success" in rollout_path["env_infos"]:
+                                    if np.sum(rollout_path["env_infos"]["success"]) >= 1:
+                                        rollout_task_paths[meta_task]["success"].append(1)
+                                    else:
+                                        rollout_task_paths[meta_task]["success"].append(0)
+
+                        line = '{},'.format(str(itr) + '_{}'.format(self.pkl))
+                        for meta_task, meta_task_rollout in enumerate(rollout_task_paths):
+                            if not meta_task_rollout["success"]:
+                                success_rate = None
+                            else:
+                                success_rate = np.mean(meta_task_rollout["success"])
+                            average_discounted_return = np.mean(meta_task_rollout["returns"])
+                            undiscounted_returns = sum(meta_task_rollout["rewards"])
+                            line = line + '{},{},{},{},'.format(meta_task, average_discounted_return, undiscounted_returns, success_rate)
+                        
+                        line = line[:-1] + '\n'
+                        print(line)
+                        self.test_csv.write(line)
+                        self.test_csv.flush()
                         return
 
                     list_inner_step_time.append(time.time() - time_inner_step_start)
@@ -149,7 +194,7 @@ class Trainer(object):
                     sess.graph.finalize()
 
         logger.log("Training finished")
-        self.sess.close()        
+        self.sess.close()     
 
     def get_itr_snapshot(self, itr):
         """
