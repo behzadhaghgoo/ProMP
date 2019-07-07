@@ -136,7 +136,7 @@ class Trainer(object):
                             for rollout_idx, rollout_path in enumerate(meta_path):
                                 rollout_path["returns"] = utils.discount_cumsum(rollout_path["rewards"], self.sample_processor.discount)
                                 rollout_task_paths[meta_task]["returns"].extend(rollout_path["returns"])
-                                rollout_task_paths[meta_task]["rewards"].extend(rollout_path["rewards"])
+                                rollout_task_paths[meta_task]["rewards"].append(rollout_path["rewards"])
                                 if "success" in rollout_path["env_infos"]:
                                     if np.sum(rollout_path["env_infos"]["success"]) >= 1:
                                         rollout_task_paths[meta_task]["success"].append(1)
