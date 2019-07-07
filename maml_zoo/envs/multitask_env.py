@@ -109,8 +109,7 @@ class MultiClassMultiTaskEnv(MultiTaskEnv):
 
     def sample_tasks(self, meta_batch_size):
         if self._sampled_all:
-            print((self._active_task + 1) % len(self._task_envs))
-            return (self._active_task + 1) % len(self._task_envs)
+            return [i for i in range(len(self._task_envs))]
         else:
             return np.random.randint(0, self.num_tasks, size=meta_batch_size)
 
