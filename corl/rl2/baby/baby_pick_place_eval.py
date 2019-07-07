@@ -2,9 +2,12 @@ import argparse
 import datetime
 import os
 import json
+import pathlib
 
 import dateutil.tz
+import joblib
 import numpy as np
+import tensorflow as tf
 
 from maml_zoo.baselines.linear_baseline import LinearFeatureBaseline
 from maml_zoo.envs.multitask_env import MultiClassMultiTaskEnv
@@ -21,9 +24,10 @@ from baby_wrapper import BabyModeWrapper
 
 N_TASKS = 10
 TASKNAME = 'pick_place'
+np.random.seed(1234)
 
 
-def rl2_test(experiment, config, sess, start_itr, pkl):
+def rl2_eval(experiment, config, sess, start_itr, all_params):
 
     pickled_env = experiment['env'].env
     pickled_tasks = pickled_env.tasks
@@ -80,13 +84,12 @@ def rl2_test(experiment, config, sess, start_itr, pkl):
         env=env,
         sampler=sampler,
         sample_processor=sample_processor,
-        n_itr=config['n_itr'],
+        n_itr=start_itr+1,
         sess=sess,
         start_itr=start_itr,
-        pkl=pkl,
     )
 
-    trainer.train()
+    trainer.eval_params(all_params)
 
 
 if __name__=="__main__":
@@ -124,26 +127,30 @@ if __name__=="__main__":
         config_file = './corl/rl2/configs/baby_mode_config{}.json'.format(idx)
 
     if pkl:
+        raise NotImplementedError
         with tf.Session() as sess:
             with open(pkl, 'rb') as file:
                 experiment = joblib.load(file)
-            logger.configure(dir='./data/rl2/eval_{}_{}_{}'.format(TASKNAME, idx, timestamp), format_strs=['stdout', 'log', 'csv'],
+            logger.configure(dir='./data/rl2/eval_{}'.format(exp_name), format_strs=['stdout', 'log', 'csv', 'json', 'tensorboard'],
                      snapshot_mode='all',)
             config = json.load(open(config_file, 'r'))
-            json.dump(config, open('./data/rl2/eval_{}_{}_{}/params.json'.format(TASKNAME, idx, rand_num), 'w'))
-            rl2_eval(experiment, config, sess, itr, pkl)
+            json.dump(config, open('./data/rl2/eval_{}/params.json'.format(exp_name), 'w'))
+            rl2_eval(experiment, config, sess, pkl_itr, pkl)
     elif folder:
+        exp_path = pathlib.Path(folder)
+        exp_name = exp_path.parts[-1]
+        eval_path = pathlib.Path('./data/rl2/eval_{}'.format(exp_name))
+        all_params = joblib.load(eval_path / 'all_params.pkl')
         for p in pkls:
+            pkl_itr = int(p.split('_')[-1].split('.')[0])
             with tf.Graph().as_default():
                 with tf.Session() as sess:
                     with open(os.path.join(folder, p), 'rb') as file:
                         experiment = joblib.load(file)
-                    logger.configure(dir='./data/rl2/eval_{}_{}_{}'.format(TASKNAME, idx, timestamp), format_strs=['stdout', 'log', 'csv'],
+                    logger.configure(dir=str(eval_path), format_strs=['stdout', 'log', 'csv', 'json', 'tensorboard'],
                              snapshot_mode='all',)
                     config = json.load(open(config_file, 'r'))
-                    json.dump(config, open('./data/rl2/eval_{}_{}_{}/params.json'.format(TASKNAME, idx, timestamp), 'w'))
-                    rl2_eval(experiment, config, sess, itr, p)
-            import gc
-            gc.collect()
+                    json.dump(config, open(eval_path / 'params.json', 'w'))
+                    rl2_eval(experiment, config, sess, pkl_itr, all_params)
     else:
         print('Please provide a pkl file')

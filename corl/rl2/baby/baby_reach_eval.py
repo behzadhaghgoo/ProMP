@@ -24,17 +24,17 @@ from baby_wrapper import BabyModeWrapper
 
 N_TASKS = 10
 TASKNAME = 'reach'
+np.random.seed(1234)
 
 
 def rl2_eval(experiment, config, sess, start_itr, all_params):
-    
+
     pickled_env = experiment['env'].env
     pickled_tasks = pickled_env.tasks
 
     goal_low = np.array((-0.1, 0.8, 0.05))
     goal_high = np.array((0.1, 0.9, 0.3))
 
-    np.random.seed(1234)
     goals = np.random.uniform(low=goal_low, high=goal_high, size=(N_TASKS, len(goal_low))).tolist()
     print(goals)
 
