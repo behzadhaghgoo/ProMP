@@ -39,6 +39,8 @@ def maml_test(experiment, config, sess, start_itr, pkl):
         for i, g in enumerate(goals)
     ]
 
+    tasks = pickled_tasks[0:20]
+
     baseline = LinearFeatureBaseline()
     env = BabyModeWrapper(SawyerReachPushPickPlace6DOFEnv(
         random_init=False,
