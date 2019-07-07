@@ -210,9 +210,11 @@ class Policy(Serializable):
         return state
 
     def __setstate__(self, state):
+        state['init_args']['__kwargs']['cell_type'] = 'lstm'
         Serializable.__setstate__(self, state['init_args'])
         tf.get_default_session().run(tf.global_variables_initializer())
         self.set_params(state['network_params'])
+        self.state = state
 
 
 class MetaPolicy(Policy):
