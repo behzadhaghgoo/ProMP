@@ -152,7 +152,7 @@ class Trainer(object):
                             else:
                                 success_rate = np.mean(meta_task_rollout["success"])
                             average_discounted_return = np.mean(meta_task_rollout["returns"])
-                            undiscounted_returns = sum(meta_task_rollout["rewards"]) / rollouts_per_meta_task
+                            undiscounted_returns = np.mean(np.sum(meta_task_rollout["rewards"], axis=1))
                             line = line + '{},{},{},{},'.format(meta_task_rollout["task_name"], average_discounted_return, undiscounted_returns, success_rate)
                         line = line[:-1] + '\n'
                         print(line)
