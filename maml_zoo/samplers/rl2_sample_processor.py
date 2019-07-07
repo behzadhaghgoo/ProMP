@@ -52,6 +52,9 @@ class RL2SampleProcessor(SampleProcessor):
         average_success_rate = np.mean(np.stack([np.any(p['env_infos']['success'] == 1) for p in paths]))
         logger.logkv(log_prefix + 'AverageSuccessRate', average_success_rate)
 
+        import ipdb
+        ipdb.set_trace()
+
         samples_data = dict(
             observations=observations,
             actions=actions,

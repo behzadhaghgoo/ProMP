@@ -58,6 +58,7 @@ if __name__=="__main__":
             json.dump(config, open('./data/rl2/eval_{}/params.json'.format(exp_name), 'w'))
             rl2_eval(experiment, config, sess, pkl_itr, pkl)
     elif folder:
+        print('Found {} pkls...'.format(len(pkls)))
         all_params = {}
         for p in sorted(pkls):
             print('Processing {}...'.format(p))
@@ -71,8 +72,7 @@ if __name__=="__main__":
                         experiment = joblib.load(file)
                         params = experiment['policy'].state['network_params']
                         all_params[pkl_itr] = params
-                        del experiment
-                
+
                 sess.close()
             tf.reset_default_graph()
 
