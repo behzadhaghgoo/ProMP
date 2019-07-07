@@ -66,6 +66,60 @@ TEST_DICT = {
     'lever_pull': SawyerLeverPull6DOFEnv
 }
 
+
+TEST_ARGS_KWARGS = {
+    'drawer_close': {
+        "args": [],
+        "kwargs": {
+            'tasks': [{'goal': np.array([0., 0.7, 0.04]),  'obj_init_pos':np.array([0., 0.9, 0.04]), 'obj_init_angle': 0.3}],
+            'multitask': False,
+            'obs_type': 'plain',
+            'if_render': False,
+            'random_init': False,  
+        }
+    },
+    'door_close': {
+        "args": [],
+        "kwargs": {
+            'tasks': [{'goal': np.array([0.2, 0.8, 0.15]),  'obj_init_pos':np.array([0.1, 0.95, 0.1]), 'obj_init_angle': 0.3}],
+            'multitask': False,
+            'obs_type': 'plain',
+            'if_render': False,
+            'random_init': False,  
+        }
+    },
+    'shelf_place': {
+        "args": [],
+        "kwargs": {
+            'tasks': [{'goal': np.array([0., 0.85, 0.001]),  'obj_init_pos':np.array([0, 0.6, 0.02]), 'obj_init_angle': 0.3}],
+            'multitask': False,
+            'obs_type': 'plain',
+            'if_render': False,
+            'random_init': False,  
+        }
+    },
+    'lever_pull': {
+        "args": [],
+        "kwargs": {
+            'tasks': [{'goal': np.array([0, 0.75, -0.12]), 'obj_init_pos':np.array([0, 0.7, 0.05])}],
+            'multitask': False,
+            'obs_type': 'plain',
+            'if_render': False,
+            'random_init': False,  
+        }
+    },
+    'sweep': {
+        "args": [],
+        "kwargs": {
+            'tasks': [{'goal': np.array([0., 0.95, -0.3]),  'obj_init_pos':np.array([0., 0.6, 0.02]), 'obj_init_angle': 0.3}],
+            'multitask': False,
+            'obs_type': 'plain',
+            'if_render': False,
+            'random_init': True,  
+        }
+    },
+}
+
 TRAIN_ARGS_KWARGS = {
     'reach': {
         "args": [],
