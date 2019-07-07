@@ -39,7 +39,7 @@ def maml_test(experiment, config, sess, start_itr, pkl):
     }
 
     TEST_ARGS_KWARGS = {
-        key: TEST_ARGS_KWARGS[key]
+        key: TRAIN_ARGS_KWARGS[key]
         for key in TEST_ENVS.keys()
     }
 
