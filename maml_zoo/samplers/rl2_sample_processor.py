@@ -1,3 +1,5 @@
+import collections
+
 from maml_zoo.logger import logger
 from maml_zoo.samplers.base import SampleProcessor
 import numpy as np
@@ -49,11 +51,12 @@ class RL2SampleProcessor(SampleProcessor):
         # 8) log statistics if desired
         self._log_path_stats(all_paths, log=log, log_prefix=log_prefix)
 
-        average_success_rate = np.mean(np.stack([np.any(p['env_infos']['success'] == 1) for p in paths]))
+        average_success_rate = np.mean(np.stack([np.any(p['env_infos']['success'] == 1) for p in all_paths]))
         logger.logkv(log_prefix + 'AverageSuccessRate', average_success_rate)
 
-        import ipdb
-        ipdb.set_trace()
+        tasks = [np.squeeze(np.nonzero(p['env_infos']['task'][0,:])) for p in paths]
+        success_rates = collections.defaultdict([])
+        avg_disc_returns = collections.defaultdict([])
 
         samples_data = dict(
             observations=observations,
