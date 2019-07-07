@@ -31,9 +31,6 @@ def maml_test(experiment, config, sess, start_itr, pkl):
     config['rollouts_per_meta_task'] = 10
     config['max_path_length'] = 150
 
-    pickled_env = experiment['env'].env
-    pickled_tasks = pickled_env.tasks
-
     from medium_env_list import TRAIN_DICT, TRAIN_ARGS_KWARGS
     env = MultiClassMultiTaskEnv(
         task_env_cls_dict=TRAIN_DICT,
