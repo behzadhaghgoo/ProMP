@@ -89,7 +89,7 @@ class MultiClassMultiTaskEnv(MultiTaskEnv):
                  n_random_init=5):
         Serializable.quick_init(self, locals())
 
-        assert len(task_env_cls_dict.keys()) == len(task_args_kwargs.keys())
+        # assert len(task_env_cls_dict.keys()) == len(task_args_kwargs.keys())
         for k in task_env_cls_dict.keys():
             assert k in task_args_kwargs
 

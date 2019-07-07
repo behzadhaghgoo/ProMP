@@ -100,7 +100,7 @@ if __name__=="__main__":
     pkls = [file for file in listdir(folder) if '.pkl' in file]
 
     if not config_file:
-        config_file = './corl/rl2/configs/easy_mode_config{}.json'.format(idx)
+        config_file = './corl/rl2/configs/medium_mode_config{}.json'.format(idx)
 
     if pkl:
         raise NotImplementedError
