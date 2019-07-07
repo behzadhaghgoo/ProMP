@@ -85,6 +85,7 @@ class MultiClassMultiTaskEnv(MultiTaskEnv):
                  task_env_cls_dict=None,
                  task_args_kwargs=None,
                  sampled_tasks=None,
+                 sample_all=True,
                  random_init=False,
                  n_random_init=5):
         Serializable.quick_init(self, locals())
@@ -95,6 +96,7 @@ class MultiClassMultiTaskEnv(MultiTaskEnv):
 
         self._task_envs = []
         self._task_names = []
+        self._sampled_all = sample_all
 
         for task, env_cls in task_env_cls_dict.items():
             task_args = task_args_kwargs[task]['args']
@@ -110,4 +112,16 @@ class MultiClassMultiTaskEnv(MultiTaskEnv):
             self._task_envs.append(task_env)
             self._task_names.append(task)
 
-        self._active_task = None
+        self._active_task = 0
+
+    def sample_tasks(self, meta_batch_size):
+        if self._sampled_all:
+            print((self._active_task + 1) % len(self._task_envs))
+            return (self._active_task + 1) % len(self._task_envs)
+        else:
+            return np.random.randint(0, self.num_tasks, size=meta_batch_size)
+
+    def step(self, action):
+        obs, reward, done, info = self.active_env.step(action)
+        info['task_name'] = str(self.active_env.__class__.__name__)
+        return obs, reward, done, info

@@ -142,6 +142,8 @@ class Trainer(object):
                                         rollout_task_paths[meta_task]["success"].append(1)
                                     else:
                                         rollout_task_paths[meta_task]["success"].append(0)
+                                if "task_name" in rollout_path['env_infos']:
+                                    print(rollout_path['env_infos']['task_name'])
 
                         line = '{},'.format(str(itr) + '_{}'.format(self.pkl))
                         for meta_task, meta_task_rollout in enumerate(rollout_task_paths):
@@ -150,13 +152,13 @@ class Trainer(object):
                             else:
                                 success_rate = np.mean(meta_task_rollout["success"])
                             average_discounted_return = np.mean(meta_task_rollout["returns"])
-                            undiscounted_returns = sum(meta_task_rollout["rewards"])
+                            undiscounted_returns = sum(meta_task_rollout["rewards"]) / rollouts_per_meta_task
                             line = line + '{},{},{},{},'.format(meta_task, average_discounted_return, undiscounted_returns, success_rate)
-                        
                         line = line[:-1] + '\n'
                         print(line)
                         self.test_csv.write(line)
                         self.test_csv.flush()
+                        logger.dumpkvs()
                         return
 
                     list_inner_step_time.append(time.time() - time_inner_step_start)
