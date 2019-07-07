@@ -22,11 +22,13 @@ from maml_zoo.logger import logger
 
 def rl2_eval(experiment, config, sess, start_itr, all_params):
 
-    from env_list import EASY_MODE_DICT, EASY_MODE_ARGS_KWARGS
+    # from env_list import EASY_MODE_DICT, EASY_MODE_ARGS_KWARGS
 
-    env = rl2env(MultiClassMultiTaskEnv(
-        task_env_cls_dict=EASY_MODE_DICT,
-        task_args_kwargs=EASY_MODE_ARGS_KWARGS))
+    # env = rl2env(MultiClassMultiTaskEnv(
+    #     task_env_cls_dict=EASY_MODE_DICT,
+    #     task_args_kwargs=EASY_MODE_ARGS_KWARGS))
+
+    env = experiment['env']
 
     baseline = LinearFeatureBaseline()
     policy = experiment['policy']

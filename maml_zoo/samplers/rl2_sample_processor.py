@@ -29,6 +29,7 @@ class RL2SampleProcessor(SampleProcessor):
         samples_data_meta_batch = []
         all_paths = []
 
+
         for meta_task, paths in paths_meta_batch.items():
 
             # fits baseline, compute advantages and stack path data
@@ -38,6 +39,8 @@ class RL2SampleProcessor(SampleProcessor):
 
             samples_data_meta_batch.append(samples_data)
             all_paths.extend(paths)
+
+            
 
         observations, actions, rewards, dones, returns, advantages, env_infos, agent_infos = \
             self._stack_path_data(samples_data_meta_batch)
@@ -54,9 +57,18 @@ class RL2SampleProcessor(SampleProcessor):
         average_success_rate = np.mean(np.stack([np.any(p['env_infos']['success'] == 1) for p in all_paths]))
         logger.logkv(log_prefix + 'AverageSuccessRate', average_success_rate)
 
-        tasks = [np.squeeze(np.nonzero(p['env_infos']['task'][0,:])) for p in paths]
-        success_rates = collections.defaultdict([])
-        avg_disc_returns = collections.defaultdict([])
+        if 'task' in all_paths[0]['env_infos']:
+            tasks = [int(np.nonzero(p['env_infos']['task'][0,:])[0]) for p in all_paths]
+            success_rates = collections.defaultdict(lambda: [])
+            avg_disc_returns = collections.defaultdict(lambda: [])
+            
+            for t, p in zip(tasks, all_paths):
+                success_rates[t].append(np.any(p['env_infos']['success'] == 1))
+                avg_disc_returns[t].append(p['returns'][0])
+                
+            for t in success_rates.keys():
+                logger.logkv('{}TaskAverageSuccessRate-{}'.format(log_prefix, t), np.mean(np.array(success_rates[t])))
+                logger.logkv('{}TaskAverageDiscountedReturn-{}'.format(log_prefix, t), np.mean(np.array(avg_disc_returns[t])))
 
         samples_data = dict(
             observations=observations,
