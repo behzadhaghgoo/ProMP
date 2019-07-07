@@ -27,7 +27,7 @@ TASKNAME = 'medium'
 
 def maml_test(experiment, config, sess, start_itr, pkl):
 
-    config['meta_batch_size'] = 9
+    config['meta_batch_size'] = 20
     config['rollouts_per_meta_task'] = 10
     config['max_path_length'] = 150
 
@@ -38,7 +38,7 @@ def maml_test(experiment, config, sess, start_itr, pkl):
     
     baseline = LinearFeatureBaseline()
     policy = experiment['policy']
-    policy.meta_batch_size = N_TASKS
+    # policy.meta_batch_size = N_TASKS
 
     sampler = MAMLSampler(
         env=env,
