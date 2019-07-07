@@ -20,13 +20,14 @@ from baby_wrapper import BabyModeWrapper
 
 maml_zoo_path = '/'.join(os.path.realpath(os.path.dirname(__file__)).split('/')[:-1])
 
-N_TASKS = 10
+
+N_TASKS = 9
 TASKNAME = 'medium'
 
 
 def maml_test(experiment, config, sess, start_itr, pkl):
 
-    config['meta_batch_size'] = 10
+    config['meta_batch_size'] = 9
     config['rollouts_per_meta_task'] = 10
     config['max_path_length'] = 150
 
@@ -116,7 +117,7 @@ if __name__=="__main__":
     pkls = [file for file in listdir(folder) if '.pkl' in file]
 
     if not config_file:
-        config_file = '/root/code/ProMP/corl/configs/baby_mode_config{}.json'.format(idx)
+        config_file = '/root/code/ProMP/corl/configs/medium_mode_config{}.json'.format(idx)
     
     if pkl:
         with tf.Session() as sess:

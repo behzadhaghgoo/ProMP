@@ -101,14 +101,7 @@ class MultiClassMultiTaskEnv(MultiTaskEnv):
         for task, env_cls in task_env_cls_dict.items():
             task_args = task_args_kwargs[task]['args']
             task_kwargs = task_args_kwargs[task]['kwargs']
-            if random_init:
-                domain, inits = generate_random_init_configs(task, n_random_init)
-                task_env = RandomInitWrapper(
-                    env_cls(*task_args, **task_kwargs),
-                    domain=domain,
-                    initial_configurations=inits,)
-            else:
-                task_env = env_cls(*task_args, **task_kwargs)
+            task_env = env_cls(*task_args, **task_kwargs)
             self._task_envs.append(task_env)
             self._task_names.append(task)
 
