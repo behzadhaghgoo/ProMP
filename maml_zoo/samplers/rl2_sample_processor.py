@@ -1,3 +1,4 @@
+from maml_zoo.logger import logger
 from maml_zoo.samplers.base import SampleProcessor
 import numpy as np
 
@@ -47,6 +48,9 @@ class RL2SampleProcessor(SampleProcessor):
 
         # 8) log statistics if desired
         self._log_path_stats(all_paths, log=log, log_prefix=log_prefix)
+
+        average_success_rate = np.mean(np.stack([p['env_infos']['success'] for p in paths]))
+        logger.logkv(log_prefix + 'AverageSuccessRate', average_success_rate)
 
         samples_data = dict(
             observations=observations,
