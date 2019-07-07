@@ -120,7 +120,7 @@ class MultiClassMultiTaskEnv(MultiTaskEnv):
     def step(self, action):
         obs, reward, done, info = self.active_env.step(action)
         if 'task_type' in dir(self.active_env):
-            name = self.active_env.task_type
+            name = '{}-{}'.format(str(self.active_env.__class__.__name__), self.active_env.task_type)
         else:
             name = str(self.active_env.__class__.__name__)
         info['task_name'] = name

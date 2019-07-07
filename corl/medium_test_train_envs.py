@@ -28,7 +28,7 @@ TASKNAME = 'medium'
 def maml_test(experiment, config, sess, start_itr, pkl):
 
     config['meta_batch_size'] = 20
-    config['rollouts_per_meta_task'] = 10
+    config['rollouts_per_meta_task'] = 5
     config['max_path_length'] = 150
 
     from medium_env_list import TRAIN_DICT, TRAIN_ARGS_KWARGS
