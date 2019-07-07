@@ -144,6 +144,8 @@ class Trainer(object):
                                         rollout_task_paths[meta_task]["success"].append(0)
                                 if "task_name" in rollout_path['env_infos']:
                                     rollout_task_paths[meta_task]['task_name'] = rollout_path['env_infos']['task_name'][0]
+                                else:
+                                    rollout_task_paths[meta_task]['task_name'] = None
 
                         line = '{},'.format(str(itr) + '_{}'.format(self.pkl))
                         for meta_task, meta_task_rollout in enumerate(rollout_task_paths):
