@@ -1,3 +1,5 @@
+import collections
+
 import numpy as np
 
 from multiworld.envs.mujoco.sawyer_xyz.env_lists import EASY_MODE_LIST
@@ -25,46 +27,46 @@ from multiworld.envs.mujoco.sawyer_xyz.sawyer_dial_turn_6dof import SawyerDialTu
 from multiworld.envs.mujoco.sawyer_xyz.sawyer_lever_pull import SawyerLeverPull6DOFEnv
 
 
-MEDIUM_MODE_DICT = {
+MEDIUM_MODE_DICT = collections.OrderedDict([
     # Train tasks
-    'reach': SawyerReachPushPickPlace6DOFEnv,
-    'push': SawyerReachPushPickPlace6DOFEnv,
-    'pickplace': SawyerReachPushPickPlace6DOFEnv,
-    'door_open': SawyerDoor6DOFEnv,
-    'drawer_open': SawyerDrawerOpen6DOFEnv,
-    'button_press_top_down': SawyerButtonPressTopdown6DOFEnv,
-    'peg_insertion_side': SawyerPegInsertionSide6DOFEnv,
-    'window_open': SawyerWindowOpen6DOFEnv,
-    'dial_turn': SawyerDialTurn6DOFEnv,
+    ('reach', SawyerReachPushPickPlace6DOFEnv),
+    ('push', SawyerReachPushPickPlace6DOFEnv),
+    ('pickplace', SawyerReachPushPickPlace6DOFEnv),
+    ('door_open', SawyerDoor6DOFEnv),
+    ('drawer_open', SawyerDrawerOpen6DOFEnv),
+    ('button_press_top_down', SawyerButtonPressTopdown6DOFEnv),
+    ('peg_insertion_side', SawyerPegInsertionSide6DOFEnv),
+    ('window_open', SawyerWindowOpen6DOFEnv),
+    ('dial_turn', SawyerDialTurn6DOFEnv),
     # Test
-    'drawer_close': SawyerDrawerClose6DOFEnv,
-    'door_close': SawyerDoorClose6DOFEnv,
-    'shelf_place': SawyerShelfPlace6DOFEnv,
-    'sweep': SawyerSweep6DOFEnv,
-    'lever_pull': SawyerLeverPull6DOFEnv
-}
+    ('drawer_close', SawyerDrawerClose6DOFEnv),
+    ('door_close', SawyerDoorClose6DOFEnv),
+    ('shelf_place', SawyerShelfPlace6DOFEnv),
+    ('sweep', SawyerSweep6DOFEnv),
+    ('lever_pull', SawyerLeverPull6DOFEnv),
+])
 
 
-TRAIN_DICT = {
-    'reach': SawyerReachPushPickPlace6DOFEnv,
-    'push': SawyerReachPushPickPlace6DOFEnv,
-    'pickplace': SawyerReachPushPickPlace6DOFEnv,
-    'door_open': SawyerDoor6DOFEnv,
-    'drawer_open': SawyerDrawerOpen6DOFEnv,
-    'button_press_top_down': SawyerButtonPressTopdown6DOFEnv,
-    'peg_insertion_side': SawyerPegInsertionSide6DOFEnv,
-    'window_open': SawyerWindowOpen6DOFEnv,
-    'dial_turn': SawyerDialTurn6DOFEnv,
-}
+TRAIN_DICT = collections.OrderedDict([
+    ('reach', SawyerReachPushPickPlace6DOFEnv),
+    ('push', SawyerReachPushPickPlace6DOFEnv),
+    ('pickplace', SawyerReachPushPickPlace6DOFEnv),
+    ('door_open', SawyerDoor6DOFEnv),
+    ('drawer_open', SawyerDrawerOpen6DOFEnv),
+    ('button_press_top_down', SawyerButtonPressTopdown6DOFEnv),
+    ('peg_insertion_side', SawyerPegInsertionSide6DOFEnv),
+    ('window_open', SawyerWindowOpen6DOFEnv),
+    ('dial_turn', SawyerDialTurn6DOFEnv),
+])
 
 
-TEST_DICT = {
-    'drawer_close': SawyerDrawerClose6DOFEnv,
-    'door_close': SawyerDoorClose6DOFEnv,
-    'shelf_place': SawyerShelfPlace6DOFEnv,
-    'sweep': SawyerSweep6DOFEnv,
-    'lever_pull': SawyerLeverPull6DOFEnv
-}
+TEST_DICT = collections.OrderedDict([
+    ('drawer_close', SawyerDrawerClose6DOFEnv),
+    ('door_close', SawyerDoorClose6DOFEnv),
+    ('shelf_place', SawyerShelfPlace6DOFEnv),
+    ('sweep', SawyerSweep6DOFEnv),
+    ('lever_pull', SawyerLeverPull6DOFEnv),
+])
 
 TRAIN_ARGS_KWARGS = {
     'reach': {
@@ -94,7 +96,7 @@ TRAIN_ARGS_KWARGS = {
             'multitask': False,
             'obs_type': 'plain',
             'if_render': False,
-            'random_init': True,   
+            'random_init': True,
         }
     },
     'door_open': {
@@ -104,7 +106,7 @@ TRAIN_ARGS_KWARGS = {
             'multitask': False,
             'obs_type': 'plain',
             'if_render': False,
-            'random_init': True,   
+            'random_init': True,
         }
     },
     'drawer_open': {
@@ -114,7 +116,7 @@ TRAIN_ARGS_KWARGS = {
             'multitask': False,
             'obs_type': 'plain',
             'if_render': False,
-            'random_init': True,   
+            'random_init': True,
         }
     },
     # 'drawer_close': {
@@ -124,7 +126,7 @@ TRAIN_ARGS_KWARGS = {
     #         'multitask': False,
     #         'obs_type': 'plain',
     #         'if_render': False,
-    #         'random_init': True,   
+    #         'random_init': True,
     #     }
     # },
     'button_press_top_down': {
@@ -134,7 +136,7 @@ TRAIN_ARGS_KWARGS = {
             'multitask': False,
             'obs_type': 'plain',
             'if_render': False,
-            'random_init': True,   
+            'random_init': True,
         }
     },
     'peg_insertion_side': {
@@ -144,7 +146,7 @@ TRAIN_ARGS_KWARGS = {
             'multitask': False,
             'obs_type': 'plain',
             'if_render': False,
-            'random_init': True,   
+            'random_init': True,
         }
     },
     'window_open': {
@@ -154,7 +156,7 @@ TRAIN_ARGS_KWARGS = {
             'multitask': False,
             'obs_type': 'plain',
             'if_render': False,
-            'random_init': True,   
+            'random_init': True,
         }
     },
     'dial_turn': {
@@ -164,7 +166,7 @@ TRAIN_ARGS_KWARGS = {
             'multitask': False,
             'obs_type': 'plain',
             'if_render': False,
-            'random_init': True,  
+            'random_init': True,
         }
     },
 }
@@ -198,7 +200,7 @@ MEDIUM_MODE_ARGS_KWARGS = {
             'multitask': False,
             'obs_type': 'plain',
             'if_render': False,
-            'random_init': True,   
+            'random_init': True,
         }
     },
     'door_open': {
@@ -208,7 +210,7 @@ MEDIUM_MODE_ARGS_KWARGS = {
             'multitask': False,
             'obs_type': 'plain',
             'if_render': False,
-            'random_init': True,   
+            'random_init': True,
         }
     },
     'drawer_open': {
@@ -218,7 +220,7 @@ MEDIUM_MODE_ARGS_KWARGS = {
             'multitask': False,
             'obs_type': 'plain',
             'if_render': False,
-            'random_init': True,   
+            'random_init': True,
         }
     },
     'drawer_close': {
@@ -228,7 +230,7 @@ MEDIUM_MODE_ARGS_KWARGS = {
             'multitask': False,
             'obs_type': 'plain',
             'if_render': False,
-            'random_init': True,   
+            'random_init': True,
         }
     },
     'button_press_top_down': {
@@ -238,7 +240,7 @@ MEDIUM_MODE_ARGS_KWARGS = {
             'multitask': False,
             'obs_type': 'plain',
             'if_render': False,
-            'random_init': True,   
+            'random_init': True,
         }
     },
     'peg_insertion_side': {
@@ -248,7 +250,7 @@ MEDIUM_MODE_ARGS_KWARGS = {
             'multitask': False,
             'obs_type': 'plain',
             'if_render': False,
-            'random_init': True,   
+            'random_init': True,
         }
     },
     'window_open': {
@@ -258,7 +260,7 @@ MEDIUM_MODE_ARGS_KWARGS = {
             'multitask': False,
             'obs_type': 'plain',
             'if_render': False,
-            'random_init': True,   
+            'random_init': True,
         }
     },
     'dial_turn': {
@@ -268,7 +270,7 @@ MEDIUM_MODE_ARGS_KWARGS = {
             'multitask': False,
             'obs_type': 'plain',
             'if_render': False,
-            'random_init': True,  
+            'random_init': True,
         }
     },
     # Test tasks
@@ -279,7 +281,7 @@ MEDIUM_MODE_ARGS_KWARGS = {
             'multitask': False,
             'obs_type': 'plain',
             'if_render': False,
-            'random_init': False,  
+            'random_init': False,
         }
     },
     'door_close': {
@@ -289,7 +291,7 @@ MEDIUM_MODE_ARGS_KWARGS = {
             'multitask': False,
             'obs_type': 'plain',
             'if_render': False,
-            'random_init': False,  
+            'random_init': False,
         }
     },
     'shelf_place': {
@@ -299,7 +301,7 @@ MEDIUM_MODE_ARGS_KWARGS = {
             'multitask': False,
             'obs_type': 'plain',
             'if_render': False,
-            'random_init': False,  
+            'random_init': False,
         }
     },
     'lever_pull': {
@@ -309,7 +311,7 @@ MEDIUM_MODE_ARGS_KWARGS = {
             'multitask': False,
             'obs_type': 'plain',
             'if_render': False,
-            'random_init': False,  
+            'random_init': False,
         }
     },
     'sweep': {
@@ -319,7 +321,7 @@ MEDIUM_MODE_ARGS_KWARGS = {
             'multitask': False,
             'obs_type': 'plain',
             'if_render': False,
-            'random_init': True,  
+            'random_init': True,
         }
     },
     # 'window_close': {
@@ -329,7 +331,7 @@ MEDIUM_MODE_ARGS_KWARGS = {
     #         'multitask': False,
     #         'obs_type': 'plain',
     #         'if_render': False,
-    #         'random_init': True,   
+    #         'random_init': True,
 
     #     }
     # },

@@ -1,3 +1,4 @@
+import collections
 import numpy as np
 
 from multiworld.envs.mujoco.sawyer_xyz.env_lists import EASY_MODE_LIST
@@ -20,18 +21,18 @@ from multiworld.envs.mujoco.sawyer_xyz.sawyer_box_close_6dof import SawyerBoxClo
 from multiworld.envs.mujoco.sawyer_xyz.sawyer_peg_insertion_side_6dof import SawyerPegInsertionSide6DOFEnv
 
 
-EASY_MODE_DICT = {
-    'reach': SawyerReachPushPickPlace6DOFEnv,
-    'push': SawyerReachPushPickPlace6DOFEnv,
-    'pickplace': SawyerReachPushPickPlace6DOFEnv,
-    'door_open': SawyerDoor6DOFEnv,
-    'drawer_open': SawyerDrawerOpen6DOFEnv,
-    'drawer_close': SawyerDrawerClose6DOFEnv,
-    'button_press_top_down': SawyerButtonPressTopdown6DOFEnv,
-    'peg_insertion_side': SawyerPegInsertionSide6DOFEnv,
-    'window_open': SawyerWindowOpen6DOFEnv,
-    'window_close': SawyerWindowClose6DOFEnv,
-}
+EASY_MODE_DICT = collections.OrderedDict([
+    ('reach', SawyerReachPushPickPlace6DOFEnv),
+    ('push', SawyerReachPushPickPlace6DOFEnv),
+    ('pickplace', SawyerReachPushPickPlace6DOFEnv),
+    ('door_open', SawyerDoor6DOFEnv),
+    ('drawer_open', SawyerDrawerOpen6DOFEnv),
+    ('drawer_close', SawyerDrawerClose6DOFEnv),
+    ('button_press_top_down', SawyerButtonPressTopdown6DOFEnv),
+    ('peg_insertion_side', SawyerPegInsertionSide6DOFEnv),
+    ('window_open', SawyerWindowOpen6DOFEnv),
+    ('window_close', SawyerWindowClose6DOFEnv),
+])
 
 
 EASY_MODE_ARGS_KWARGS = {

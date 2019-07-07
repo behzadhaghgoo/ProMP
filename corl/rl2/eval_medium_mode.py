@@ -2,6 +2,7 @@ import argparse
 import datetime
 import os
 import json
+import pathlib
 
 import dateutil.tz
 import joblib
@@ -19,13 +20,13 @@ from maml_zoo.policies.gaussian_rnn_policy import GaussianRNNPolicy
 from maml_zoo.logger import logger
 
 
-
 def rl2_eval(experiment, config, sess, start_itr, all_params):
-    from medium_env_list import TRAIN_DICT, TRAIN_ARGS_KWARGS
+
+    from medium_env_list import TEST_DICT, MEDIUM_MODE_ARGS_KWARGS
 
     env = rl2env(MultiClassMultiTaskEnv(
-        task_env_cls_dict=TRAIN_DICT,
-        task_args_kwargs=TRAIN_ARGS_KWARGS))
+        task_env_cls_dict=TEST_DICT,
+        task_args_kwargs=MEDIUM_MODE_ARGS_KWARGS))
 
     baseline = LinearFeatureBaseline()
     policy = experiment['policy']
@@ -66,8 +67,6 @@ def rl2_eval(experiment, config, sess, start_itr, all_params):
     )
 
     trainer.eval_params(all_params)
-
-
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='Play a pickled policy.')

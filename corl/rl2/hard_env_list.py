@@ -5,10 +5,9 @@ from multiworld.envs.mujoco.sawyer_xyz.sawyer_reach_push_pick_place_6dof import 
 from multiworld.envs.mujoco.sawyer_xyz.sawyer_reach_push_pick_place_wall_6dof import SawyerReachPushPickPlaceWall6DOFEnv
 
 
-TRAIN_DICT = {
-    i: env
-    for i, env in enumerate(HARD_MODE_LIST)
-}
+TRAIN_DICT = collections.OrderedDict([enumerate(HARD_MODE_LIST[:-5])])
+
+TEST_DICT = collections.OrderedDict([enumerate(HARD_MODE_LIST[-5:])])
 
 
 _reach_push_pick_place = 0
@@ -64,5 +63,10 @@ def hard_mode_args_kwargs(env_cls):
 
 TRAIN_ARGS_KWARGS = {
     i: hard_mode_args_kwargs(env)
-    for i, env in enumerate(HARD_MODE_LIST)
+    for i, env in enumerate(HARD_MODE_LIST[:-5])
+}
+
+TEST_ARGS_KWARGS = {
+    i: hard_mode_args_kwargs(env)
+    for i, env in enumerate(HARD_MODE_LIST[-5:])
 }

@@ -25,7 +25,7 @@ maml_zoo_path = '/'.join(os.path.realpath(os.path.dirname(__file__)).split('/')[
 
 def main(config):
 
-    from env_list import EASY_MODE_DICT, EASY_MODE_ARGS_KWARGS
+    from easy_env_list import EASY_MODE_DICT, EASY_MODE_ARGS_KWARGS
 
     baseline = LinearFeatureBaseline()
     env = rl2env(MultiClassMultiTaskEnv(
