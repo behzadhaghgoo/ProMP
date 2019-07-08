@@ -1,3 +1,5 @@
+import collections
+
 import numpy as np
 
 from multiworld.envs.mujoco.sawyer_xyz.env_lists import HARD_MODE_LIST
@@ -5,9 +7,9 @@ from multiworld.envs.mujoco.sawyer_xyz.sawyer_reach_push_pick_place_6dof import 
 from multiworld.envs.mujoco.sawyer_xyz.sawyer_reach_push_pick_place_wall_6dof import SawyerReachPushPickPlaceWall6DOFEnv
 
 
-TRAIN_DICT = collections.OrderedDict([enumerate(HARD_MODE_LIST[:-5])])
+TRAIN_DICT = collections.OrderedDict([(i, j) for i, j in enumerate(HARD_MODE_LIST[:-5])])
 
-TEST_DICT = collections.OrderedDict([enumerate(HARD_MODE_LIST[-5:])])
+TEST_DICT = collections.OrderedDict([(i, j) for i, j in enumerate(HARD_MODE_LIST[-5:])])
 
 
 _reach_push_pick_place = 0

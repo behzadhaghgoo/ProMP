@@ -20,39 +20,19 @@ from maml_zoo.samplers.rl2_sample_processor import RL2SampleProcessor
 from maml_zoo.policies.gaussian_rnn_policy import GaussianRNNPolicy
 from maml_zoo.logger import logger
 
-from multiworld.envs.mujoco.sawyer_xyz.sawyer_reach_push_pick_place_6dof import SawyerReachPushPickPlace6DOFEnv
-from baby_wrapper import BabyModeWrapper
-
-N_TASKS = 10
-TASKNAME = 'pick_place'
-np.random.seed(1234)
-
 
 def rl2_eval(experiment, config, sess, start_itr, all_params):
 
-    pickled_env = experiment['env'].env
-    pickled_tasks = pickled_env.tasks
+    from medium_env_list import TEST_DICT, MEDIUM_MODE_ARGS_KWARGS
 
-    goal_low = np.array((0.05, 0.8, 0.1))
-    goal_high = np.array((0.15, 0.9, 0.2))
+    env = experiment['env']
 
-    goals = np.random.uniform(low=goal_low, high=goal_high, size=(N_TASKS, len(goal_low))).tolist()
-    print(goals)
+    itr = 1135
+    all_params = {itr: all_params[itr]}
 
-    tasks =[
-        {'goal': np.array(g), 'obj_init_pos':np.array([0, 0.6, 0.02]), 'obj_init_angle': 0.3, 'type':'pick_place'}
-        for i, g in enumerate(goals)
-    ]
+    print('Environments: {}'.format(env._wrapped_env._task_names))
 
     baseline = LinearFeatureBaseline()
-    env = rl2env(BabyModeWrapper(SawyerReachPushPickPlace6DOFEnv(
-        random_init=False,
-        multitask=False,
-        obs_type='plain',
-        if_render=False,
-        tasks=tasks,
-    )))
-
     policy = experiment['policy']
 
     sampler = MAMLSampler(
@@ -93,7 +73,6 @@ def rl2_eval(experiment, config, sess, start_itr, all_params):
     trainer.eval_params(all_params)
     sys.exit(0)
 
-
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='Play a pickled policy.')
     parser.add_argument('variant_index', metavar='variant_index', type=int,
@@ -126,7 +105,7 @@ if __name__=="__main__":
     pkls = [file for file in listdir(folder) if '.pkl' in file]
 
     if not config_file:
-        config_file = './corl/rl2/configs/baby_mode_config{}.json'.format(idx)
+        config_file = './corl/rl2/configs/medium_mode_config{}.json'.format(idx)
 
     if pkl:
         raise NotImplementedError
@@ -142,6 +121,7 @@ if __name__=="__main__":
         exp_path = pathlib.Path(folder)
         exp_name = exp_path.parts[-1]
         eval_path = pathlib.Path('./data/rl2/eval_{}'.format(exp_name))
+        output_path = eval_path / 'meta_train_single'
         all_params = joblib.load(eval_path / 'all_params.pkl')
         for p in pkls:
             pkl_itr = int(p.split('_')[-1].split('.')[0])
@@ -149,10 +129,10 @@ if __name__=="__main__":
                 with tf.Session() as sess:
                     with open(os.path.join(folder, p), 'rb') as file:
                         experiment = joblib.load(file)
-                    logger.configure(dir=str(eval_path), format_strs=['stdout', 'log', 'csv', 'json', 'tensorboard'],
+                    logger.configure(dir=str(output_path), format_strs=['stdout', 'log', 'csv', 'json', 'tensorboard'],
                              snapshot_mode='all',)
                     config = json.load(open(config_file, 'r'))
-                    json.dump(config, open(eval_path / 'params.json', 'w'))
+                    json.dump(config, open(output_path / 'params.json', 'w'))
                     rl2_eval(experiment, config, sess, pkl_itr, all_params)
     else:
         print('Please provide a pkl file')

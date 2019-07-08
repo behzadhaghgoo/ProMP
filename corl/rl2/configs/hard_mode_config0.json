@@ -1,6 +1,6 @@
 {
     "algo": "RL2",
-    "meta_batch_size": 40,
+    "meta_batch_size": 45,
     "hidden_sizes": [
       400,
       400,

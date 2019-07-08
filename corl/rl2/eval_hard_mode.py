@@ -3,6 +3,7 @@ import datetime
 import os
 import json
 import pathlib
+import sys
 
 import dateutil.tz
 import joblib
@@ -67,6 +68,7 @@ def rl2_eval(experiment, config, sess, start_itr, all_params):
     )
 
     trainer.eval_params(all_params)
+    sys.exit(0)
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='Play a pickled policy.')
