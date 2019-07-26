@@ -61,7 +61,8 @@ class RL2SampleProcessor(SampleProcessor):
             tasks = [int(np.nonzero(p['env_infos']['task'][0,:])[0]) for p in all_paths]
             success_rates = collections.defaultdict(lambda: [])
             avg_disc_returns = collections.defaultdict(lambda: [])
-            
+            import ipdb
+            ipdb.set_trace()
             for t, p in zip(tasks, all_paths):
                 success_rates[t].append(np.any(p['env_infos']['success'] == 1))
                 avg_disc_returns[t].append(p['returns'][0])
