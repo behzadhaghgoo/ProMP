@@ -53,11 +53,67 @@ def rl2_eval(experiment, config, sess, start_itr, all_params):
         },
     }
 
+    baseline = LinearFeatureBaseline()
     env = rl2env(MultiClassMultiTaskEnv(
         task_env_cls_dict=TRAIN_DICT,
         task_args_kwargs=TRAIN_ARGS_KWARGS))
 
+    obs_dim = np.prod(env.observation_space.shape) + np.prod(env.action_space.shape) + 1 + 1
+
+    policy = GaussianRNNPolicy(
+        name="meta-policy",
+        obs_dim=obs_dim,
+        action_dim=np.prod(env.action_space.shape),
+        meta_batch_size=config['meta_batch_size'],
+        hidden_sizes=config['hidden_sizes'],
+        cell_type=config['cell_type'],
+        init_std=2.
+    )
+
+    sampler = MAMLSampler(
+        env=env,
+        policy=policy,
+        rollouts_per_meta_task=config['rollouts_per_meta_task'],  # This batch_size is confusing
+        meta_batch_size=config['meta_batch_size'],
+        max_path_length=config['max_path_length'],
+        parallel=config['parallel'],
+        envs_per_task=config['envs_per_task']
+    )
+
+    sample_processor = RL2SampleProcessor(
+        baseline=baseline,
+        discount=config['discount'],
+        gae_lambda=config['gae_lambda'],
+        normalize_adv=config['normalize_adv'],
+        positive_adv=config['positive_adv'],
+    )
+
+    algo = PPO(
+        policy=policy,
+        learning_rate=config['learning_rate'],
+        max_epochs=config['max_epochs'],
+    )
+
+    trainer = Trainer(
+        algo=algo,
+        policy=policy,
+        env=env,
+        sampler=sampler,
+        sample_processor=sample_processor,
+        n_itr=config['n_itr'],
+    )
+    trainer.train()
+
+
+def resume(experiment, config, sess, start_itr):
+
+    from medium_env_list import TRAIN_DICT, TRAIN_ARGS_KWARGS
+
     baseline = LinearFeatureBaseline()
+    env = rl2env(MultiClassMultiTaskEnv(
+        task_env_cls_dict=TRAIN_DICT,
+        task_args_kwargs=TRAIN_ARGS_KWARGS))
+
     policy = experiment['policy']
 
     sampler = MAMLSampler(
@@ -80,7 +136,7 @@ def rl2_eval(experiment, config, sess, start_itr, all_params):
 
     algo = PPO(
         policy=policy,
-        learning_rate=0.,
+        learning_rate=config['learning_rate'],
         max_epochs=config['max_epochs'],
     )
 
@@ -90,22 +146,18 @@ def rl2_eval(experiment, config, sess, start_itr, all_params):
         env=env,
         sampler=sampler,
         sample_processor=sample_processor,
-        n_itr=start_itr+1,
+        n_itr=config['n_itr'],
         sess=sess,
         start_itr=start_itr,
     )
 
-    trainer.eval_params(all_params)
-
+    trainer.train()
 
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='Play a pickled policy.')
     parser.add_argument('variant_index', metavar='variant_index', type=int,
                     help='The index of variants to use for experiment')
-    parser.add_argument('--dir', metavar='dir', type=str,
-                    help='The path of the folder that contains pkl files',
-                    default=None, required=False)
     parser.add_argument('--pkl', metavar='pkl', type=str,
                     help='The path of the pkl file',
                     default=None, required=False)
@@ -119,45 +171,27 @@ if __name__=="__main__":
 
     now = datetime.datetime.now(dateutil.tz.tzlocal())
     timestamp = now.strftime('%Y_%m_%d_%H_%M_%S')
+
     idx = args.variant_index
     pkl = args.pkl
-    folder = args.dir
-    config_file = args.config
+    config = args.config
     itr = args.itr
 
-    from os import listdir
-    from os.path import isfile
-    import os.path
-    pkls = [file for file in listdir(folder) if '.pkl' in file]
-
-    if not config_file:
-        config_file = './corl/rl2/configs/easy_mode_config{}.json'.format(idx)
+    if not config:
+        config = json.load(open("./corl/rl2/configs/medium_mode_config{}.json".format(idx), 'r'))
 
     if pkl:
-        raise NotImplementedError
         with tf.Session() as sess:
             with open(pkl, 'rb') as file:
                 experiment = joblib.load(file)
-            logger.configure(dir='./data/rl2/eval_{}'.format(exp_name), format_strs=['stdout', 'log', 'csv', 'json', 'tensorboard'],
-                     snapshot_mode='all',)
-            config = json.load(open(config_file, 'r'))
-            json.dump(config, open('./data/rl2/eval_{}/params.json'.format(exp_name), 'w'))
-            rl2_eval(experiment, config, sess, pkl_itr, pkl)
-    elif folder:
-        exp_path = pathlib.Path(folder)
-        exp_name = exp_path.parts[-1]
-        eval_path = pathlib.Path('./data/rl2/eval_{}'.format(exp_name))
-        all_params = joblib.load(eval_path / 'all_params.pkl')
-        for p in pkls:
-            pkl_itr = int(p.split('_')[-1].split('.')[0])
-            with tf.Graph().as_default():
-                with tf.Session() as sess:
-                    with open(os.path.join(folder, p), 'rb') as file:
-                        experiment = joblib.load(file)
-                    logger.configure(dir=str(eval_path), format_strs=['stdout', 'log', 'csv', 'json', 'tensorboard'],
-                             snapshot_mode='all',)
-                    config = json.load(open(config_file, 'r'))
-                    json.dump(config, open(eval_path / 'params.json', 'w'))
-                    rl2_eval(experiment, config, sess, pkl_itr, all_params)
+            logger.configure(dir='./data/rl2/test_{}_{}'.format(idx, timestamp), format_strs=['stdout', 'log', 'csv', 'json', 'tensorboard'],
+                     snapshot_mode='gap', snapshot_gap=5,)
+            config = json.load(open(config, 'r'))
+            json.dump(config, open('./data/rl2/test_{}_{}/params.json'.format(idx, timestamp), 'w'))
+            resume(experiment, config, sess, itr)
     else:
-        print('Please provide a pkl file')
+        logger.configure(dir='./data/rl2/test_{}_{}'.format(idx, timestamp), format_strs=['stdout', 'log', 'csv', 'json', 'tensorboard'],
+                     snapshot_mode='gap', snapshot_gap=5,)
+        config = json.load(open("./corl/rl2/configs/medium_mode_config{}.json".format(idx), 'r'))
+        json.dump(config, open('./data/rl2/test_{}_{}/params.json'.format(idx, timestamp), 'w'))
+        main(config)
