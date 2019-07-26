@@ -3,7 +3,7 @@ from maml_zoo.utils import Serializable
 import gym
 import numpy as np
 
-from multiworld.envs.mujoco.random_init_wrapper import generate_random_init_configs, RandomInitWrapper
+from metaworld.envs.mujoco.random_init_wrapper import generate_random_init_configs, RandomInitWrapper
 
 
 class MultiTaskEnv(gym.Env, Serializable):
