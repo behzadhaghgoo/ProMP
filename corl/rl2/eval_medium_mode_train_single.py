@@ -27,8 +27,8 @@ def rl2_eval(experiment, config, sess, start_itr, all_params):
 
     env = experiment['env']
 
-    itr = 1135
-    all_params = {itr: all_params[itr]}
+    # itr = 1135
+    all_params = {0: all_params}
 
     print('Environments: {}'.format(env._wrapped_env._task_names))
 
@@ -108,7 +108,6 @@ if __name__=="__main__":
         config_file = './corl/rl2/configs/medium_mode_config{}.json'.format(idx)
 
     if pkl:
-        raise NotImplementedError
         with tf.Session() as sess:
             with open(pkl, 'rb') as file:
                 experiment = joblib.load(file)
@@ -116,7 +115,7 @@ if __name__=="__main__":
                      snapshot_mode='all',)
             config = json.load(open(config_file, 'r'))
             json.dump(config, open('./data/rl2/eval_{}/params.json'.format(exp_name), 'w'))
-            rl2_eval(experiment, config, sess, pkl_itr, pkl)
+            rl2_eval(experiment, config, sess, 0, pkl)
     elif folder:
         exp_path = pathlib.Path(folder)
         exp_name = exp_path.parts[-1]
