@@ -108,6 +108,7 @@ if __name__=="__main__":
         config_file = './corl/rl2/configs/medium_mode_config{}.json'.format(idx)
 
     if pkl:
+        exp_name = 'rl2eval-debug'
         with tf.Session() as sess:
             with open(pkl, 'rb') as file:
                 experiment = joblib.load(file)
