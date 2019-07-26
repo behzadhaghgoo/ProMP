@@ -71,10 +71,10 @@ class MultiTaskEnv(gym.Env, Serializable):
     API's for MAML Sampler
     '''
     def sample_tasks(self, meta_batch_size):
-        return np.random.randint(0, self.num_tasks, size=meta_batch_size)
+        return [i for i in range(meta_batch_size)]
     
     def set_task(self, task):
-        self._active_task = task
+        self._active_task = task % len(self._task_envs)
 
     def log_diagnostics(self, paths, prefix):
         pass
