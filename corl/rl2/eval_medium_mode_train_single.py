@@ -23,7 +23,7 @@ from maml_zoo.logger import logger
 
 def rl2_eval(experiment, config, sess, start_itr, all_params):
 
-    from medium_env_list import TEST_DICT, MEDIUM_MODE_ARGS_KWARGS
+    # from medium_env_list import TEST_DICT, MEDIUM_MODE_ARGS_KWARGS
 
     env = experiment['env']
 
