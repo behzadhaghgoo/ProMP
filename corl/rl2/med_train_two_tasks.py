@@ -22,8 +22,8 @@ from maml_zoo.logger import logger
 
 def rl2_eval(experiment, config, sess, start_itr, all_params):
     import collections
-    from multiworld.envs.mujoco.sawyer_xyz.sawyer_reach_push_pick_place_6dof import SawyerReachPushPickPlace6DOFEnv
-    from multiworld.envs.mujoco.sawyer_xyz.sawyer_dial_turn_6dof import SawyerDialTurn6DOFEnv
+    from metaworld.envs.mujoco.sawyer_xyz.sawyer_reach_push_pick_place_6dof import SawyerReachPushPickPlace6DOFEnv
+    from metaworld.envs.mujoco.sawyer_xyz.sawyer_dial_turn_6dof import SawyerDialTurn6DOFEnv
 
     TRAIN_DICT = collections.OrderedDict([
         ('reach', SawyerReachPushPickPlace6DOFEnv),
