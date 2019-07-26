@@ -65,7 +65,10 @@ class Trainer(object):
 
             start_time = time.time()
             for itr in sorted(params.keys()):
-                self.policy.set_params(params[itr])
+                # print(params)
+                # import ipdb
+                # ipdb.set_trace()
+                # self.policy.set_params(params[itr])
                 self.task = self.env.sample_tasks(self.sampler.meta_batch_size)
                 self.sampler.set_tasks(self.task)
                 itr_start_time = time.time()
