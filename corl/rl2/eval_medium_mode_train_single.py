@@ -28,7 +28,7 @@ def rl2_eval(experiment, config, sess, start_itr, all_params):
     env = experiment['env']
 
     # itr = 1135
-    all_params = {0: all_params}
+    all_params = {0: all_params['policy'].get_params()}
 
     print('Environments: {}'.format(env._wrapped_env._task_names))
 
