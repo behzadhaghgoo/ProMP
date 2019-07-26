@@ -116,7 +116,7 @@ if __name__=="__main__":
                      snapshot_mode='all',)
             config = json.load(open(config_file, 'r'))
             json.dump(config, open('./data/rl2/eval_{}/params.json'.format(exp_name), 'w'))
-            rl2_eval(experiment, config, sess, 0, pkl)
+            rl2_eval(experiment, config, sess, 0, experiment)
     elif folder:
         exp_path = pathlib.Path(folder)
         exp_name = exp_path.parts[-1]
