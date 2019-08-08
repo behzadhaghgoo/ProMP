@@ -8,24 +8,25 @@ import sys
 import gym
 
 import numpy as np
-from multiworld.envs.mujoco.sawyer_xyz.sawyer_door_hook import SawyerDoorHookEnv
-from multiworld.envs.mujoco.sawyer_xyz.sawyer_door import SawyerDoorEnv
 
-from multiworld.envs.mujoco.sawyer_xyz.sawyer_pick_and_place import \
+from metaworld.envs.mujoco.sawyer_xyz.sawyer_door_hook import SawyerDoorHookEnv
+from metaworld.envs.mujoco.sawyer_xyz.sawyer_door import SawyerDoorEnv
+
+from metaworld.envs.mujoco.sawyer_xyz.sawyer_pick_and_place import \
     SawyerPickAndPlaceEnv
-from multiworld.envs.mujoco.sawyer_xyz.sawyer_push_and_reach_env import \
+from metaworld.envs.mujoco.sawyer_xyz.sawyer_push_and_reach_env import \
     SawyerPushAndReachXYEnv, SawyerPushAndReachXYZEnv
-from multiworld.envs.mujoco.sawyer_xyz.sawyer_push_and_reach_env_two_pucks import (
+from metaworld.envs.mujoco.sawyer_xyz.sawyer_push_and_reach_env_two_pucks import (
     SawyerPushAndReachXYDoublePuckEnv,
     SawyerPushAndReachXYZDoublePuckEnv,
 )
 
-from multiworld.envs.mujoco.sawyer_xyz.sawyer_reach import SawyerReachXYEnv, \
+from metaworld.envs.mujoco.sawyer_xyz.sawyer_reach import SawyerReachXYEnv, \
     SawyerReachXYZEnv
 
-from multiworld.envs.mujoco.sawyer_xyz.sawyer_throw import SawyerThrowEnv
-from multiworld.envs.mujoco.sawyer_xyz.sawyer_hand_insert import SawyerHandInsertEnv
-from multiworld.envs.mujoco.sawyer_xyz.sawyer_sweep_into_goal import SawyerSweepIntoGoalEnv
+from metaworld.envs.mujoco.sawyer_xyz.sawyer_throw import SawyerThrowEnv
+from metaworld.envs.mujoco.sawyer_xyz.sawyer_hand_insert import SawyerHandInsertEnv
+from metaworld.envs.mujoco.sawyer_xyz.sawyer_sweep_into_goal import SawyerSweepIntoGoalEnv
 
 
 
@@ -58,7 +59,7 @@ char_to_action = {
 
 
 import gym
-import multiworld
+import metaworld
 import pygame
 # env = gym.make('SawyerPushAndReachEnvEasy-v0')
 # env = SawyerPushAndReachXYEnv(
@@ -74,40 +75,45 @@ import pygame
 #     reset_free=False,
 # )
 # env = SawyerSweepEnv()
-env = SawyerSweepIntoGoalEnv()
+# env = SawyerSweepIntoGoalEnv()
+env = SawyerBoxClose6DOFEnv(random_init=True)
 NDIM = env.action_space.low.size
 lock_action = False
+random_action = False
 obs = env.reset()
-action = np.zeros(10)
+action = np.zeros(4)
 while True:
     done = False
     if not lock_action:
         action[:3] = 0
-    for event in pygame.event.get():
-        event_happened = True
-        if event.type == QUIT:
-            sys.exit()
-        if event.type == KEYDOWN:
-            char = event.dict['key']
-            new_action = char_to_action.get(chr(char), None)
-            if new_action == 'toggle':
-                lock_action = not lock_action
-            elif new_action == 'reset':
-                done = True
-            elif new_action == 'close':
-                action[3] = 1
-            elif new_action == 'open':
-                action[3] = -1
-            elif new_action == 'put obj in hand':
-                print("putting obj in hand")
-                env.put_obj_in_hand()
-                action[3] = 1
-            elif new_action is not None:
-                action[:3] = new_action[:3]
-            else:
-                action = np.zeros(3)
-            print(action)
-    env.step(action[:3])
+    if not random_action:
+        for event in pygame.event.get():
+            event_happened = True
+            if event.type == QUIT:
+                sys.exit()
+            if event.type == KEYDOWN:
+                char = event.dict['key']
+                new_action = char_to_action.get(chr(char), None)
+                if new_action == 'toggle':
+                    lock_action = not lock_action
+                elif new_action == 'reset':
+                    done = True
+                elif new_action == 'close':
+                    action[3] = 1
+                elif new_action == 'open':
+                    action[3] = -1
+                elif new_action == 'put obj in hand':
+                    print("putting obj in hand")
+                    env.put_obj_in_hand()
+                    action[3] = 1
+                elif new_action is not None:
+                    action[:3] = new_action[:3]
+                else:
+                    action = np.zeros(3)
+                print(action)
+    else:
+        action = env.action_space.sample()
+    ob, reward, done, infos = env.step(action)
     # time.sleep(1)
     if done:
         obs = env.reset()
