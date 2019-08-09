@@ -19,20 +19,25 @@ from maml_zoo.trainer import Trainer
 
 from metaworld.envs.mujoco.sawyer_xyz import SawyerNutDisassemble6DOFEnv
 from metaworld.envs.mujoco.multitask_env import MultiClassMultiTaskEnv
+from metaworld.envs.mujoco.env_dict import EASY_MODE_CLS_DICT, EASY_MODE_ARGS_KWARGS
 
+
+print(EASY_MODE_ARGS_KWARGS)
 maml_zoo_path = '/'.join(os.path.realpath(os.path.dirname(__file__)).split('/')[:-1])
 
 
 def run_experiment(**kwargs):
-    env_dict = {'env': SawyerNutDisassemble6DOFEnv}
-    env_args_kwargs = {'env': dict(args=[], kwargs={'obs_type': 'plain'})}
     env = MultiClassMultiTaskEnv(
-        task_env_cls_dict=env_dict,
-        task_args_kwargs=env_args_kwargs,
+        task_env_cls_dict=EASY_MODE_CLS_DICT,
+        task_args_kwargs=EASY_MODE_ARGS_KWARGS,
         sample_goals=False,
-        obs_type='plain',
+        obs_type='with_goal_idx',
     )
-    goals_dict = {'env': [np.array([0, 0.8, 0.17]),]}
+    goals_dict = {
+        t: [e.goal.copy()]
+        for t, e in zip(env._task_names, env._task_envs)
+    }
+    print(goals_dict)
     env.discretize_goal_space(goals_dict)
     print(kwargs)
 
@@ -57,7 +62,7 @@ def run_experiment(**kwargs):
         env=env,
         policy=policy,
         rollouts_per_meta_task=kwargs['rollouts_per_meta_task'],
-        meta_batch_size=1,
+        meta_batch_size=len(EASY_MODE_CLS_DICT.keys()),
         max_path_length=kwargs['max_path_length'],
         parallel=kwargs['parallel'],
         envs_per_task=kwargs['envs_per_task'],
