@@ -28,10 +28,11 @@ def main(config):
     # goals are sampled and set anyways so we don't care about the default goal of reach
     # pick_place, push are the same.
     env = MultiClassMultiTaskEnv(
-        task_env_cls_dict=MEDIUM_MODE_CLS_DICT['train'],
-        task_args_kwargs=MEDIUM_MODE_ARGS_KWARGS['train'],
+        task_env_cls_dict=HARD_MODE_CLS_DICT['train'],
+        task_args_kwargs=HARD_MODE_ARGS_KWARGS['train'],
         sample_goals=True,
         obs_type='plain',
+        sample_all=True,
     )
 
     policy = MetaGaussianMLPPolicy(
