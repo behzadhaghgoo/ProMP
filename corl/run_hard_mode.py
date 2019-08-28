@@ -9,7 +9,7 @@ import numpy as np
 import tensorflow as tf
 
 from maml_zoo.baselines.linear_baseline import LinearFeatureBaseline
-from maml_zoo.envs.multitask_env import MultiClassMultiTaskEnv
+from metaworld.envs.mujoco.multitask_env import MultiClassMultiTaskEnv
 from maml_zoo.logger import logger
 from maml_zoo.meta_algos.trpo_maml import TRPOMAML
 from maml_zoo.meta_trainer import Trainer
@@ -22,12 +22,17 @@ maml_zoo_path = '/'.join(os.path.realpath(os.path.dirname(__file__)).split('/')[
 
 
 def main(config):
-    from hard_env_list import TRAIN_DICT, TRAIN_ARGS_KWARGS
+    from metaworld.envs.mujoco.env_dict import HARD_MODE_CLS_DICT, HARD_MODE_ARGS_KWARGS
 
     baseline = LinearFeatureBaseline()
+    # goals are sampled and set anyways so we don't care about the default goal of reach
+    # pick_place, push are the same.
     env = MultiClassMultiTaskEnv(
-        task_env_cls_dict=TRAIN_DICT,
-        task_args_kwargs=TRAIN_ARGS_KWARGS)
+        task_env_cls_dict=MEDIUM_MODE_CLS_DICT['train'],
+        task_args_kwargs=MEDIUM_MODE_ARGS_KWARGS['train'],
+        sample_goals=True,
+        obs_type='plain',
+    )
 
     policy = MetaGaussianMLPPolicy(
             name="meta-policy",
