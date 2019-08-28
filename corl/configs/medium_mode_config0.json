@@ -1,13 +1,12 @@
 {
   "algo": "TRPO-MAML",
-  "meta_batch_size": 40,
+  "meta_batch_size": 20,
   "hidden_sizes": [
-    300,
     300,
     300
   ],
   "envs_per_task": 1,
-  "rollouts_per_meta_task": 10,
+  "rollouts_per_meta_task": 20,
   "parallel": true,
   "max_path_length":150,
   "discount": 0.99,
