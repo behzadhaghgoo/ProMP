@@ -164,13 +164,13 @@ if __name__=="__main__":
             with open(pkl, 'rb') as file:
                 experiment = joblib.load(file)
             logger.configure(dir='./data/rl2/test_{}_{}'.format(idx, timestamp), format_strs=['stdout', 'log', 'csv', 'json', 'tensorboard'],
-                     snapshot_mode='gap', snapshot_gap=5,)
+                     snapshot_mode='all')
             config = json.load(open(config, 'r'))
             json.dump(config, open('./data/rl2/test_{}_{}/params.json'.format(idx, timestamp), 'w'))
             resume(experiment, config, sess, itr)
     else:
         logger.configure(dir='./data/rl2/test_{}_{}'.format(idx, timestamp), format_strs=['stdout', 'log', 'csv', 'json', 'tensorboard'],
-                     snapshot_mode='gap', snapshot_gap=5,)
+                     snapshot_mode='all',)
         config = json.load(open("./corl/rl2/configs/hard_mode_config{}.json".format(idx), 'r'))
         json.dump(config, open('./data/rl2/test_{}_{}/params.json'.format(idx, timestamp), 'w'))
         main(config)
