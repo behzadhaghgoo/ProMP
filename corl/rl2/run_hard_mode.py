@@ -36,7 +36,7 @@ def main(config):
         sample_all=True,
         obs_type='plain',
     )
-
+    env = rl2env(env)
     obs_dim = np.prod(env.observation_space.shape) + np.prod(env.action_space.shape) + 1 + 1
 
     policy = GaussianRNNPolicy(
