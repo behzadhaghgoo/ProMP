@@ -9,7 +9,6 @@ import numpy as np
 import tensorflow as tf
 
 from maml_zoo.baselines.linear_baseline import LinearFeatureBaseline
-# from maml_zoo.envs.multitask_env import MultiClassMultiTaskEnv
 from maml_zoo.envs.rl2_env import rl2env
 from maml_zoo.algos.ppo import PPO
 from maml_zoo.trainer import Trainer
@@ -19,7 +18,6 @@ from maml_zoo.policies.gaussian_rnn_policy import GaussianRNNPolicy
 from maml_zoo.logger import logger
 
 from metaworld.envs.mujoco.multitask_env import MultiClassMultiTaskEnv
-from metaworld.envs.mujoco.env_dict import EASY_MODE_CLS_DICT, EASY_MODE_ARGS_KWARGS
 
 
 maml_zoo_path = '/'.join(os.path.realpath(os.path.dirname(__file__)).split('/')[:-1])
@@ -29,21 +27,20 @@ def main(config):
 
     baseline = LinearFeatureBaseline()
 
+    from metaworld.envs.mujoco.env_dict import MEDIUM_MODE_CLS_DICT, MEDIUM_MODE_ARGS_KWARGS
+    # goals are sampled and set anyways so we don't care about the default goal of reach
+    # pick_place, push are the same.
     env = MultiClassMultiTaskEnv(
-        task_env_cls_dict=EASY_MODE_CLS_DICT,
-        task_args_kwargs=EASY_MODE_ARGS_KWARGS,
-        sample_goals=False,
-        obs_type='with_goal_idx',
+        task_env_cls_dict=MEDIUM_MODE_CLS_DICT['train'],
+        task_args_kwargs=MEDIUM_MODE_ARGS_KWARGS['train'],
+        sample_goals=True,
+        sample_all=True,
+        obs_type='plain',
     )
-    goals_dict = {
-        t: [e.goal.copy()]
-        for t, e in zip(env._task_names, env._task_envs)
-    }
-    print(goals_dict)
-    env.discretize_goal_space(goals_dict)
-    config['meta_batch_size'] = len(EASY_MODE_CLS_DICT.keys())
-    env = rl2env(env)
 
+    config['meta_batch_size'] = len(MEDIUM_MODE_CLS_DICT['train'].keys())
+    env = rl2env(env)
+    print(config)
     obs_dim = np.prod(env.observation_space.shape) + np.prod(env.action_space.shape) + 1 + 1
 
     policy = GaussianRNNPolicy(
@@ -53,7 +50,7 @@ def main(config):
         meta_batch_size=config['meta_batch_size'],
         hidden_sizes=config['hidden_sizes'],
         cell_type=config['cell_type'],
-#        init_std=2.
+        init_std=2.
     )
 
     sampler = MAMLSampler(

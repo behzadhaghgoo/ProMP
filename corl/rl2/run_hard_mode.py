@@ -9,7 +9,6 @@ import numpy as np
 import tensorflow as tf
 
 from maml_zoo.baselines.linear_baseline import LinearFeatureBaseline
-from maml_zoo.envs.multitask_env import MultiClassMultiTaskEnv
 from maml_zoo.envs.rl2_env import rl2env
 from maml_zoo.algos.ppo import PPO
 from maml_zoo.trainer import Trainer
@@ -18,17 +17,25 @@ from maml_zoo.samplers.rl2_sample_processor import RL2SampleProcessor
 from maml_zoo.policies.gaussian_rnn_policy import GaussianRNNPolicy
 from maml_zoo.logger import logger
 
+from metaworld.envs.mujoco.multitask_env import MultiClassMultiTaskEnv
+
 
 maml_zoo_path = '/'.join(os.path.realpath(os.path.dirname(__file__)).split('/')[:-1])
 
 
 def main(config):
-    from hard_env_list import TRAIN_DICT, TRAIN_ARGS_KWARGS
+
+    from metaworld.envs.mujoco.env_dict import HARD_MODE_CLS_DICT, HARD_MODE_ARGS_KWARGS
 
     baseline = LinearFeatureBaseline()
-    env = rl2env(MultiClassMultiTaskEnv(
-        task_env_cls_dict=TRAIN_DICT,
-        task_args_kwargs=TRAIN_ARGS_KWARGS))
+
+    env = MultiClassMultiTaskEnv(
+        task_env_cls_dict=HARD_MODE_CLS_DICT['train'],
+        task_args_kwargs=HARD_MODE_ARGS_KWARGS['train'],
+        sample_goals=True,
+        sample_all=True,
+        obs_type='plain',
+    )
 
     obs_dim = np.prod(env.observation_space.shape) + np.prod(env.action_space.shape) + 1 + 1
 
