@@ -21,7 +21,7 @@ from metaworld.envs.mujoco.multitask_env import MultiClassMultiTaskEnv
 
 
 maml_zoo_path = '/'.join(os.path.realpath(os.path.dirname(__file__)).split('/')[:-1])
-
+N_TASKS = 50
 
 def run_experiment(**kwargs):
 
@@ -39,7 +39,8 @@ def run_experiment(**kwargs):
             task_env_cls_dict=MT50_CLS_DICT,
             task_args_kwargs=MT50_ARGS_KWARGS,
             sample_goals=False,
-            obs_type='with_goal_idx',)
+            obs_type='with_goal_idx',
+            sample_all=True,)
     # discretize goal space
     goals_dict = {
         t: [e.goal.copy()]
@@ -147,5 +148,5 @@ if __name__ == "__main__":
         logger.configure(dir=maml_zoo_path + '/data/mtppo/test_{}_{}'.format(idx, timestamp), format_strs=['stdout', 'log', 'csv'],
                      snapshot_mode='all')
         config = json.load(open("./corl/mtppo/mt50_config.json", 'r'))
-        json.dump(config, open(maml_zoo_path + '/data/trpo/test_{}_{}/params.json'.format(idx, timestamp), 'w'))
+        json.dump(config, open(maml_zoo_path + '/data/mtppo/test_{}_{}/params.json'.format(idx, timestamp), 'w'))
         run_experiment(**config)
