@@ -99,7 +99,6 @@ def run_experiment(**kwargs):
 
     algo = TRPO(
         policy=policy,
-        learning_rate=kwargs['learning_rate']
     )
 
     trainer = Trainer(
@@ -140,11 +139,11 @@ if __name__ == "__main__":
                 experiment = joblib.load(file)
             logger.configure(dir=maml_zoo_path + '/data/mttrpo/test_{}_{}'.format(idx, timestamp), format_strs=['stdout', 'log', 'csv'],
                      snapshot_mode='all')
-            config = json.load(open("./corl/mttrpo/mt50_config.json", 'r'))
+            config = json.load(open("./corl/mtppo/mt50_config.json", 'r'))
             json.dump(config, open(maml_zoo_path + '/data/mttrpo/test_{}_{}/params.json'.format(idx, timestamp), 'w'))
             resume(experiment, config, sess, itr)
     else:
-        logger.configure(dir=maml_zoo_path + '/data/mttrpo/test_{}_{}'.format(idx, timestamp), format_strs=['stdout', 'log', 'csv'],
+        logger.configure(dir=maml_zoo_path + '/data/mtppo/test_{}_{}'.format(idx, timestamp), format_strs=['stdout', 'log', 'csv'],
                      snapshot_mode='all')
         config = json.load(open("./corl/mttrpo/mt50_config.json", 'r'))
         json.dump(config, open(maml_zoo_path + '/data/mttrpo/test_{}_{}/params.json'.format(idx, timestamp), 'w'))
