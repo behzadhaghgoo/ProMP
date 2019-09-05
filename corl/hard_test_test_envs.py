@@ -24,7 +24,7 @@ TASKNAME = 'hard-test-testenvs'
 def maml_test(experiment, config, sess, start_itr, pkl):
 
     config['meta_batch_size'] = 45  # Sampler force this to be the original meta_batch_size
-    config['rollouts_per_meta_task'] = 2  # Each task will be sampled 45 / 5 * 2 times
+    config['rollouts_per_meta_task'] = 10
     config['max_path_length'] = 150
 
     from metaworld.envs.mujoco.env_dict import HARD_MODE_CLS_DICT, HARD_MODE_ARGS_KWARGS
