@@ -20,13 +20,12 @@ from metaworld.envs.mujoco.multitask_env import MultiClassMultiTaskEnv
 maml_zoo_path = '/'.join(os.path.realpath(os.path.dirname(__file__)).split('/')[:-1])
 
 
-N_TASKS = 9
+N_TASKS = 10
 TASKNAME = 'medium'
 
 
 def maml_test(experiment, config, sess, start_itr, pkl):
 
-    # config['meta_batch_size'] = 20
     config['rollouts_per_meta_task'] = 10
     config['max_path_length'] = 150
 
@@ -38,11 +37,13 @@ def maml_test(experiment, config, sess, start_itr, pkl):
         task_args_kwargs=MEDIUM_MODE_ARGS_KWARGS['train'],
         sample_goals=True,
         obs_type='plain',
+        sample_all=True,
     )
+
+    config['meta_batch_size'] = len(MEDIUM_MODE_CLS_DICT['train'].keys())
 
     baseline = LinearFeatureBaseline()
     policy = experiment['policy']
-    # policy.meta_batch_size = N_TASKS
 
     sampler = MAMLSampler(
         env=env,
@@ -51,7 +52,7 @@ def maml_test(experiment, config, sess, start_itr, pkl):
         meta_batch_size=config['meta_batch_size'],
         max_path_length=config['max_path_length'],
         parallel=config['parallel'],
-        envs_per_task=config['envs_per_task']
+        envs_per_task=config['envs_per_task'],
     )
 
     sample_processor = MAMLSampleProcessor(
@@ -82,6 +83,7 @@ def maml_test(experiment, config, sess, start_itr, pkl):
         sess=sess,
         start_itr=start_itr,
         pkl=pkl,
+        name='trainenvs',
     )
 
     trainer.train(test_time=True)

@@ -33,6 +33,7 @@ class Trainer(object):
             num_inner_grad_steps=1,
             sess=None,
             pkl=None,
+            name='',
             ):
         self.algo = algo
         self.env = env
@@ -48,7 +49,7 @@ class Trainer(object):
         self.sess = sess
         self.pkl = pkl
 
-        test_csv = '/root/code/ProMP/test_maml.csv'
+        test_csv = '/root/code/ProMP/test_maml_{}.csv'.format(name)
         if os.path.exists(test_csv):
             self.test_csv = open(test_csv, 'a+')
         else:

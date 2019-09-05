@@ -16,30 +16,30 @@ from maml_zoo.samplers.maml_sample_processor import MAMLSampleProcessor
 
 from metaworld.envs.mujoco.multitask_env import MultiClassMultiTaskEnv
 
+
 maml_zoo_path = '/'.join(os.path.realpath(os.path.dirname(__file__)).split('/')[:-1])
-
-
-TASKNAME = 'medium-test-5'
+TASKNAME = 'hard-test-testenvs'
 
 
 def maml_test(experiment, config, sess, start_itr, pkl):
 
-    config['meta_batch_size'] = 10  # Need to use the original meta_batch_size
-    config['rollouts_per_meta_task'] = 10
+    config['meta_batch_size'] = 45  # Sampler force this to be the original meta_batch_size
+    config['rollouts_per_meta_task'] = 2  # Each task will be sampled 45 / 5 * 2 times
     config['max_path_length'] = 150
 
-    from metaworld.envs.mujoco.env_dict import MEDIUM_MODE_CLS_DICT, MEDIUM_MODE_ARGS_KWARGS
+    from metaworld.envs.mujoco.env_dict import HARD_MODE_CLS_DICT, HARD_MODE_ARGS_KWARGS
+
+    baseline = LinearFeatureBaseline()
     # goals are sampled and set anyways so we don't care about the default goal of reach
     # pick_place, push are the same.
     env = MultiClassMultiTaskEnv(
-        task_env_cls_dict=MEDIUM_MODE_CLS_DICT['test'],
-        task_args_kwargs=MEDIUM_MODE_ARGS_KWARGS['test'],
+        task_env_cls_dict=HARD_MODE_CLS_DICT['test'],
+        task_args_kwargs=HARD_MODE_ARGS_KWARGS['test'],
         sample_goals=True,
         obs_type='plain',
         sample_all=True,
     )
 
-    baseline = LinearFeatureBaseline()
     policy = experiment['policy']
 
     sampler = MAMLSampler(
@@ -76,7 +76,7 @@ def maml_test(experiment, config, sess, start_itr, pkl):
         sampler=sampler,
         sample_processor=sample_processor,
         n_itr=config['n_itr'],
-        num_inner_grad_steps=config['num_inner_grad_steps'],
+        num_inner_grad_steps=config['num_inner_grad_steps'],  # This is repeated in MAMLPPO, it's confusing
         sess=sess,
         start_itr=start_itr,
         pkl=pkl,
@@ -117,7 +117,7 @@ if __name__=="__main__":
     pkls = [file for file in listdir(folder) if '.pkl' in file]
 
     if not config_file:
-        config_file = '/root/code/ProMP/corl/configs/medium_mode_config{}.json'.format(idx)
+        config_file = '/root/code/ProMP/corl/configs/hard_mode_config{}.json'.format(idx)
     
     if pkl:
         with tf.Session() as sess:
