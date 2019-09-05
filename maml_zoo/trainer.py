@@ -1,13 +1,15 @@
+import os
+
 import tensorflow as tf
 import numpy as np
 import time
 from maml_zoo.logger import logger
+from maml_zoo.utils import utils
 
 
 class Trainer(object):
     """
     Performs steps for MAML
-
     Args:
         algo (Algo) :
         env (Env) :
@@ -31,6 +33,9 @@ class Trainer(object):
             start_itr=0,
             task=None,
             sess=None,
+            meta_batch_size=0,
+            pkl=None,
+            name='',
             ):
         self.algo = algo
         self.env = env
@@ -44,11 +49,27 @@ class Trainer(object):
         if sess is None:
             sess = tf.Session()
         self.sess = sess
+        self.pkl = pkl
 
-    def train(self):
+        # open a csv file to log all
+        # evaluation
+        test_csv = '/root/code/ProMP/test_rl2_{}.csv'.format(name)
+        if os.path.exists(test_csv):
+            self.test_csv = open(test_csv, 'a+')
+        else:
+            self.test_csv = open(test_csv, 'a+')
+            head = 'Itr,'
+            for meta_batch in range(meta_batch_size):
+                meta_head = 'Task{},{},{},{},'.format(meta_batch, 'AverageDiscountedReturn', 'UndiscountedReturn', 'SuccessRate')
+                head += meta_head
+            head = head[:-1] + '\n'
+            print(head)
+            self.test_csv.write(head)
+            self.test_csv.flush()
+
+    def train(self, test_time=False):
         """
         Trains policy on env using algo
-
         Pseudocode:
             for itr in n_itr:
                 for step in num_inner_grad_steps:
@@ -84,6 +105,43 @@ class Trainer(object):
                 time_proc_samples_start = time.time()
                 samples_data = self.sample_processor.process_samples(paths, log='all', log_prefix='train-')
                 proc_samples_time = time.time() - time_proc_samples_start
+
+                if test_time:
+                    logger.log("Done with collecting and processing test data.")
+                    logger.log("Saving per-task data now.")
+
+                    rollout_task_paths = []
+                    for i in range(len(paths.keys())):
+                        d = dict(returns=[], success=[], rewards=[])
+                        rollout_task_paths.append(d)
+                    for meta_task, meta_path in paths.items():
+                        for rollout_idx, rollout_path in enumerate(meta_path):
+                            rollout_path["returns"] = utils.discount_cumsum(rollout_path["rewards"], self.sample_processor.discount)
+                            rollout_task_paths[meta_task]["returns"].extend(rollout_path["returns"])
+                            rollout_task_paths[meta_task]["rewards"].append(rollout_path["rewards"])
+                            if "success" in rollout_path["env_infos"]:
+                                if np.sum(rollout_path["env_infos"]["success"]) >= 1:
+                                    rollout_task_paths[meta_task]["success"].append(1)
+                                else:
+                                    rollout_task_paths[meta_task]["success"].append(0)
+                            if "task_name" in rollout_path['env_infos']:
+                                rollout_task_paths[meta_task]['task_name'] = rollout_path['env_infos']['task_name'][0]
+
+                    line = '{},'.format(str(itr) + '_{}'.format(self.pkl))
+                    for meta_task, meta_task_rollout in enumerate(rollout_task_paths):
+                        if not meta_task_rollout["success"]:
+                            success_rate = None
+                        else:
+                            success_rate = np.mean(meta_task_rollout["success"])
+                        average_discounted_return = np.mean(meta_task_rollout["returns"])
+                        undiscounted_returns = np.mean(np.sum(meta_task_rollout["rewards"], axis=1))
+                        line = line + '{},{},{},{},'.format(meta_task_rollout["task_name"], average_discounted_return, undiscounted_returns, success_rate)
+                    line = line[:-1] + '\n'
+                    print(line)
+                    self.test_csv.write(line)
+                    self.test_csv.flush()
+                    logger.dumpkvs()
+                    return
 
                 self.log_diagnostics(sum(paths.values(), []), prefix='train-')
 
