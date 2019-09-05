@@ -30,13 +30,13 @@ def rl2_eval(experiment, config, sess, start_itr, pkl):
 
     from metaworld.envs.mujoco.env_dict import MEDIUM_MODE_CLS_DICT, MEDIUM_MODE_ARGS_KWARGS
     env = MultiClassMultiTaskEnv(
-        task_env_cls_dict=MEDIUM_MODE_CLS_DICT['train'],
-        task_args_kwargs=MEDIUM_MODE_ARGS_KWARGS['train'],
+        task_env_cls_dict=MEDIUM_MODE_CLS_DICT['test'],
+        task_args_kwargs=MEDIUM_MODE_ARGS_KWARGS['test'],
         sample_goals=True,
         sample_all=True,
         obs_type='plain',
     )
-    config['meta_batch_size'] = len(MEDIUM_MODE_CLS_DICT['train'].keys())
+    config['meta_batch_size'] = len(MEDIUM_MODE_CLS_DICT['test'].keys())
     config['rollouts_per_meta_task'] = 10
     config['max_path_length'] = 150
     print(config)
@@ -80,7 +80,7 @@ def rl2_eval(experiment, config, sess, start_itr, pkl):
         start_itr=start_itr,
         meta_batch_size=config['meta_batch_size'],
         pkl=pkl,
-        name='med_trainenvs',
+        name='med_testenvs',
     )
 
     trainer.train(test_time=True)

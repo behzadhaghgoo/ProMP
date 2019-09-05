@@ -36,6 +36,7 @@ class Trainer(object):
             sess=None,
             meta_batch_size=0,
             pkl=None,
+            name='',
             ):
         self.algo = algo
         self.env = env
@@ -53,7 +54,7 @@ class Trainer(object):
 
         # open a csv file to log all
         # evaluation
-        test_csv = '/root/code/ProMP/test_rl2.csv'
+        test_csv = '/root/code/ProMP/test_rl2_{}.csv'.format(name)
         if os.path.exists(test_csv):
             self.test_csv = open(test_csv, 'a+')
         else:
