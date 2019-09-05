@@ -37,7 +37,7 @@ def rl2_eval(experiment, config, sess, start_itr, pkl):
         obs_type='plain',
     )
     config['meta_batch_size'] = len(HARD_MODE_CLS_DICT['train'].keys())
-    config['rollouts_per_meta_task'] = 2
+    config['rollouts_per_meta_task'] = 10
     config['max_path_length'] = 150
     print(config)
     env = rl2env(env)
