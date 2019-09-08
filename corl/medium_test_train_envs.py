@@ -139,7 +139,6 @@ def eval_single(env, pkl_file_path, sampler, sample_processor, config):
     with tf.Graph().as_default():
         with tf.Session() as sess:
             with open(pkl_file_path, 'rb') as f:
-                import ipdb; ipdb.set_trace()
                 experiment = joblib.load(f)
                 policy = experiment['policy']
                 sampler.policy = policy
@@ -161,7 +160,7 @@ def eval_single(env, pkl_file_path, sampler, sample_processor, config):
                     n_itr=config['n_itr'],
                     num_inner_grad_steps=config['num_inner_grad_steps'],  # This is repeated in MAMLPPO, it's confusing
                     sess=sess,
-                    start_itr=start_itr,
+                    start_itr=0,
                     pkl=pkl,
                     name='med_trainenvs',
                 )
