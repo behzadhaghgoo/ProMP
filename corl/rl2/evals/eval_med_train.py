@@ -87,7 +87,7 @@ def rl2_eval(experiment, config, sess, start_itr, pkl):
     sys.exit(0)
 
 
-def rl2_eval_batch(folder, config, sess, start_itr, pkl):
+def rl2_eval_batch(folder, config, start_itr):
 
     from metaworld.envs.mujoco.env_dict import MEDIUM_MODE_CLS_DICT, MEDIUM_MODE_ARGS_KWARGS
     env = MultiClassMultiTaskEnv(
@@ -101,7 +101,7 @@ def rl2_eval_batch(folder, config, sess, start_itr, pkl):
     config['rollouts_per_meta_task'] = 10
     config['max_path_length'] = 150
     env = rl2env(env)
-
+    baseline = LinearFeatureBaseline()
     sample_processor = RL2SampleProcessor(
         baseline=baseline,
         discount=config['discount'],
@@ -133,11 +133,10 @@ def eval_single(env, pkl_file_path, sampler, sample_processor, config):
     with tf.Graph().as_default():
         with tf.Session() as sess:
             with open(pkl_file_path, 'rb') as f:
-
-                baseline = LinearFeatureBaseline()
+                import ipdb; ipdb.set_trace()
                 experiment = joblib.load(f)
                 policy = experiment['policy']
-                sample.policy = policy
+                sampler.policy = policy
 
                 algo = PPO(
                     policy=policy,
@@ -208,8 +207,6 @@ if __name__=="__main__":
                     snapshot_mode='all',)
         config = json.load(open(config_file, 'r'))
         json.dump(config, open(maml_zoo_path + '/data/rl2_test/test_{}_{}_{}/params.json'.format(TASKNAME, idx, rand_num), 'w'))
-        maml_test(experiment, config, sess, itr, p)
-            import gc
-            gc.collect()
+        rl2_eval_batch(folder, config, itr)
     else:
         print('Please provide a pkl file')
