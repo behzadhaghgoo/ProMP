@@ -86,6 +86,79 @@ def rl2_eval(experiment, config, sess, start_itr, pkl):
     sys.exit(0)
 
 
+def rl2_eval_batch(folder, config, start_itr):
+
+    from metaworld.envs.mujoco.env_dict import HARD_MODE_CLS_DICT, HARD_MODE_ARGS_KWARGS
+    env = MultiClassMultiTaskEnv(
+        task_env_cls_dict=HARD_MODE_CLS_DICT['train'],
+        task_args_kwargs=HARD_MODE_ARGS_KWARGS['train'],
+        sample_goals=True,
+        sample_all=True,
+        obs_type='plain',
+    )
+    config['meta_batch_size'] = len(HARD_MODE_CLS_DICT['train'].keys())
+    config['rollouts_per_meta_task'] = 10
+    config['max_path_length'] = 150
+    env = rl2env(env)
+
+    baseline = LinearFeatureBaseline()
+    sample_processor = RL2SampleProcessor(
+        baseline=baseline,
+        discount=config['discount'],
+        gae_lambda=config['gae_lambda'],
+        normalize_adv=config['normalize_adv'],
+        positive_adv=config['positive_adv'],
+    )
+
+    sampler = MAMLSampler(
+        env=env,
+        policy=None,
+        rollouts_per_meta_task=config['rollouts_per_meta_task'],  # This batch_size is confusing
+        meta_batch_size=config['meta_batch_size'],
+        max_path_length=config['max_path_length'],
+        parallel=config['parallel'],
+        envs_per_task=config['envs_per_task']
+    )
+
+    all_pkls = [f for f in listdir(folder) if '.pkl' in f]
+    for p in all_pkls:
+        full_path = os.path.join(folder, p)
+        eval_single(env, full_path, sampler, sample_processor, config)
+
+
+def eval_single(env, pkl_file_path, sampler, sample_processor, config):
+    """
+    load policy-> replace sampler's policy-> rebuild tf graph wit new session-> eval
+    """
+    with tf.Graph().as_default():
+        with tf.Session() as sess:
+            with open(pkl_file_path, 'rb') as f:
+                experiment = joblib.load(f)
+                policy = experiment['policy']
+                sampler.policy = policy
+
+                algo = PPO(
+                    policy=policy,
+                    learning_rate=0.,
+                    max_epochs=config['max_epochs'],
+                )
+                trainer = Trainer(
+                    algo=algo,
+                    policy=policy,
+                    env=env,
+                    sampler=sampler,
+                    sample_processor=sample_processor,
+                    n_itr=1,
+                    sess=sess,
+                    start_itr=0,  # This is not important since we have pickle filename
+                    meta_batch_size=config['meta_batch_size'],
+                    pkl=pkl_file_path,
+                    name='hard_trainenvs',
+                )
+
+                trainer.train(test_time=True)
+
+
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='Play a pickled policy.')
     parser.add_argument('variant_index', metavar='variant_index', type=int,
@@ -117,7 +190,7 @@ if __name__=="__main__":
     pkls = [file for file in listdir(folder) if '.pkl' in file]
 
     if not config_file:
-        config_file = '/root/code/ProMP/corl/rl2/configs/medium_mode_config{}.json'.format(idx)
+        config_file = '/root/code/ProMP/corl/rl2/configs/hard_mode_config{}.json'.format(idx)
     
     if pkl:
         with tf.Session() as sess:
@@ -129,17 +202,10 @@ if __name__=="__main__":
             json.dump(config, open(maml_zoo_path + '/data/rl2_test/test_{}_{}_{}/params.json'.format(TASKNAME, idx, rand_num), 'w'))
             rl2_eval(experiment, config, sess, itr, pkl)
     elif folder:
-        for p in pkls:
-            with tf.Graph().as_default():
-                with tf.Session() as sess:
-                    with open(os.path.join(folder, p), 'rb') as file:
-                        experiment = joblib.load(file)
-                    logger.configure(dir=maml_zoo_path + '/data/rl2_test/test_{}_{}_{}'.format(TASKNAME, idx, rand_num), format_strs=['stdout', 'log', 'csv'],
-                             snapshot_mode='all',)
-                    config = json.load(open(config_file, 'r'))
-                    json.dump(config, open(maml_zoo_path + '/data/rl2_test/test_{}_{}_{}/params.json'.format(TASKNAME, idx, rand_num), 'w'))
-                    maml_test(experiment, config, sess, itr, p)
-            import gc
-            gc.collect()
+        logger.configure(dir=maml_zoo_path + '/data/rl2_test/test_{}_{}_{}'.format(TASKNAME, idx, rand_num), format_strs=['stdout', 'log', 'csv'],
+                    snapshot_mode='all',)
+        config = json.load(open(config_file, 'r'))
+        json.dump(config, open(maml_zoo_path + '/data/rl2_test/test_{}_{}_{}/params.json'.format(TASKNAME, idx, rand_num), 'w'))
+        rl2_eval_batch(folder, config, itr)
     else:
         print('Please provide a pkl file')
