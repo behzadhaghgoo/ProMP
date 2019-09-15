@@ -6,10 +6,13 @@ import json
 import numpy as np
 import tensorflow as tf
 
+from maml_zoo.algos.ppo import PPO
+from maml_zoo.samplers.single_sample_processor import SingleSampleProcessor
+
 from maml_zoo.baselines.linear_baseline import LinearFeatureBaseline
 from maml_zoo.logger import logger
 from maml_zoo.meta_algos.trpo_maml import TRPOMAML
-from maml_zoo.meta_trainer import Trainer
+from maml_zoo.trainer import Trainer
 from maml_zoo.policies.meta_gaussian_mlp_policy import MetaGaussianMLPPolicy
 from maml_zoo.samplers.maml_sampler import MAMLSampler
 from maml_zoo.samplers.maml_sample_processor import MAMLSampleProcessor
@@ -168,7 +171,8 @@ def mt50_test_batch(folder, config, start_itr, algo_name):
         parallel=config['parallel'],
         envs_per_task=config['envs_per_task'],
     )
-    
+
+    from os import listdir
     all_pkls = [f for f in listdir(folder) if '.pkl' in f]
     for p in all_pkls:
         full_path = os.path.join(folder, p)
@@ -237,7 +241,7 @@ if __name__=="__main__":
             config = json.load(open('./corl/mtppo/mt50_config.json', 'r'))
             json.dump(config, open(maml_zoo_path + '/data/mtppo_test/test_{}_{}_{}/params.json'.format(TASKNAME, idx, rand_num), 'w'))
             mt_test(experiment, config, sess, itr, pkl, algo)
-    else folder:
+    elif folder:
         logger.configure(dir=maml_zoo_path + '/data/mtppo_test/test_{}_{}_{}'.format(TASKNAME, idx, rand_num), format_strs=['stdout', 'log', 'csv'],
             snapshot_mode='all',)
         config = json.load(open('./corl/mtppo/mt50_config.json', 'r'))
