@@ -101,11 +101,17 @@ def maml_test_batch(folder, config, start_itr, start, end, suffix):
 
     from metaworld.envs.mujoco.env_dict import HARD_MODE_CLS_DICT, HARD_MODE_ARGS_KWARGS
 
+    test_cls = HARD_MODE_CLS_DICT['test']
+    test_args = HARD_MODE_ARGS_KWARGS['test']
+    test_cls[28] = HARD_MODE_CLS_DICT['train']['28']
+    test_args[28] = HARD_MODE_ARGS_KWARGS['train']['28']
+
+
     # goals are sampled and set anyways so we don't care about the default goal of reach
     # pick_place, push are the same.
     env = MultiClassMultiTaskEnv(
-        task_env_cls_dict=HARD_MODE_CLS_DICT['test'],
-        task_args_kwargs=HARD_MODE_ARGS_KWARGS['test'],
+        task_env_cls_dict=test_cls,
+        task_args_kwargs=test_args,
         sample_goals=True,
         obs_type='plain',
         sample_all=True,
