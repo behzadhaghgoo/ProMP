@@ -176,10 +176,10 @@ def mt50_test_batch(folder, config, start_itr, algo_name):
     all_pkls = [f for f in listdir(folder) if '.pkl' in f]
     for p in all_pkls:
         full_path = os.path.join(folder, p)
-        eval_single(env, full_path, sampler, sample_processor, config, algo_name)
+        eval_single(env, full_path, sampler, sample_processor, config, algo_name, full_path)
 
 
-def eval_single(env, pkl_file_path, sampler, sample_processor, config, algo_name):
+def eval_single(env, pkl_file_path, sampler, sample_processor, config, algo_name, full_path):
     """
     load policy-> replace sampler's policy-> rebuild tf graph wit new session-> eval
     """
@@ -202,6 +202,7 @@ def eval_single(env, pkl_file_path, sampler, sample_processor, config, algo_name
                     policy=policy,
                     n_itr=config['n_itr'],
                     name='mt50_{}'.format(algo_name),
+                    pkl=full_path,
                 )
 
                 trainer.train(test_time=True)

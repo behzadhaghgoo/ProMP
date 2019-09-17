@@ -126,10 +126,10 @@ def maml_test_batch(folder, config, start_itr):
     all_pkls = [f for f in listdir(folder) if '.pkl' in f]
     for p in all_pkls:
         full_path = os.path.join(folder, p)
-        eval_single(env, full_path, sampler, sample_processor, config)
+        eval_single(env, full_path, sampler, sample_processor, config, full_path)
 
 
-def eval_single(env, pkl_file_path, sampler, sample_processor, config):
+def eval_single(env, pkl_file_path, sampler, sample_processor, config, full_path):
     """
     load policy-> replace sampler's policy-> rebuild tf graph wit new session-> eval
     """
@@ -158,7 +158,7 @@ def eval_single(env, pkl_file_path, sampler, sample_processor, config):
                     num_inner_grad_steps=config['num_inner_grad_steps'],  # This is repeated in MAMLPPO, it's confusing
                     sess=sess,
                     start_itr=0,
-                    pkl=pkl,
+                    pkl=full_path,
                     name='hard_trainenvs',
                 )
 

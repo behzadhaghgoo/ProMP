@@ -50,7 +50,7 @@ class Trainer(object):
             sess = tf.Session()
         self.sess = sess
         self.pkl = pkl
-
+        assert self.pkl is not None
         # open a csv file to log all
         # evaluation
         test_csv = '/root/code/ProMP/test_rl2_{}.csv'.format(name)
