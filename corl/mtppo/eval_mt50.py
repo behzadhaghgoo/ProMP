@@ -111,7 +111,7 @@ def mt_test(experiment, config, sess, start_itr, pkl, algo_name):
     trainer.train(test_time=True)
 
 
-def mt50_test_batch(folder, config, start_itr, algo_name):
+def mt50_test_batch(folder, config, start_itr, algo_name, start, end):
     config['rollouts_per_meta_task'] = 10
     config['max_path_length'] = 150
 
@@ -173,7 +173,8 @@ def mt50_test_batch(folder, config, start_itr, algo_name):
     )
 
     from os import listdir
-    all_pkls = [f for f in listdir(folder) if '.pkl' in f]
+    all_pkls = ['itr_{}.pkl'.format(i) for i in range(start, end)]
+
     for p in all_pkls:
         full_path = os.path.join(folder, p)
         eval_single(env, full_path, sampler, sample_processor, config, algo_name, full_path)
@@ -224,6 +225,11 @@ if __name__=="__main__":
     parser.add_argument('--itr', metavar='itr', type=int,
                     help='The start itr of the resuming experiment', 
                     default=0, required=False)
+
+    parser.add_argument('--start', metavar='start', type=int,
+                    default=0, required=False)
+    parser.add_argument('--end', metavar='end', type=int,
+                    default=0, required=False)
     args = parser.parse_args()
 
     rand_num = np.random.uniform()
@@ -232,7 +238,9 @@ if __name__=="__main__":
     folder = args.dir
     algo = args.algo
     itr = args.itr
-    
+
+    start = args.start
+    end = args.end
     if pkl:
         with tf.Session() as sess:
             with open(pkl, 'rb') as file:
@@ -247,6 +255,6 @@ if __name__=="__main__":
             snapshot_mode='all',)
         config = json.load(open('./corl/mtppo/mt50_config.json', 'r'))
         json.dump(config, open(maml_zoo_path + '/data/mtppo_test/test_{}_{}_{}/params.json'.format(TASKNAME, idx, rand_num), 'w'))
-        mt50_test_batch(folder, config, itr, algo)
+        mt50_test_batch(folder, config, itr, algo, start, end)
     else:
         print('Please provide a pkl file')
