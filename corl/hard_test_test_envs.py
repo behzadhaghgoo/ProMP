@@ -103,8 +103,8 @@ def maml_test_batch(folder, config, start_itr, start, end, suffix):
 
     test_cls = HARD_MODE_CLS_DICT['test']
     test_args = HARD_MODE_ARGS_KWARGS['test']
-    test_cls[28] = HARD_MODE_CLS_DICT['train']['28']
-    test_args[28] = HARD_MODE_ARGS_KWARGS['train']['28']
+    test_cls[28] = HARD_MODE_CLS_DICT['train'][28]
+    test_args[28] = HARD_MODE_ARGS_KWARGS['train'][28]
 
 
     # goals are sampled and set anyways so we don't care about the default goal of reach

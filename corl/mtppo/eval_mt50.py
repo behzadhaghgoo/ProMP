@@ -1,5 +1,7 @@
 import argparse
 import os
+import dateutil.tz
+import datetime
 
 import joblib
 import json
@@ -111,7 +113,7 @@ def mt_test(experiment, config, sess, start_itr, pkl, algo_name):
     trainer.train(test_time=True)
 
 
-def mt50_test_batch(folder, config, start_itr, algo_name, start, end):
+def mt50_test_batch(folder, config, start_itr, algo_name, start, end, suffix):
     config['rollouts_per_meta_task'] = 10
     config['max_path_length'] = 150
 
@@ -177,10 +179,10 @@ def mt50_test_batch(folder, config, start_itr, algo_name, start, end):
 
     for p in all_pkls:
         full_path = os.path.join(folder, p)
-        eval_single(env, full_path, sampler, sample_processor, config, algo_name, full_path)
+        eval_single(env, full_path, sampler, sample_processor, config, algo_name, full_path, suffix)
 
 
-def eval_single(env, pkl_file_path, sampler, sample_processor, config, algo_name, full_path):
+def eval_single(env, pkl_file_path, sampler, sample_processor, config, algo_name, full_path, suffix):
     """
     load policy-> replace sampler's policy-> rebuild tf graph wit new session-> eval
     """
@@ -202,7 +204,7 @@ def eval_single(env, pkl_file_path, sampler, sample_processor, config, algo_name
                     sample_processor=sample_processor,
                     policy=policy,
                     n_itr=config['n_itr'],
-                    name='mt50_{}'.format(algo_name),
+                    name='mt50_{}_{}'.format(algo_name, suffix),
                     pkl=full_path,
                 )
 
@@ -241,6 +243,9 @@ if __name__=="__main__":
 
     start = args.start
     end = args.end
+
+    now = datetime.datetime.now(dateutil.tz.tzlocal())
+    timestamp = now.strftime('%Y_%m_%d_%H_%M_%S')
     if pkl:
         with tf.Session() as sess:
             with open(pkl, 'rb') as file:
@@ -255,6 +260,6 @@ if __name__=="__main__":
             snapshot_mode='all',)
         config = json.load(open('./corl/mtppo/mt50_config.json', 'r'))
         json.dump(config, open(maml_zoo_path + '/data/mtppo_test/test_{}_{}_{}/params.json'.format(TASKNAME, idx, rand_num), 'w'))
-        mt50_test_batch(folder, config, itr, algo, start, end)
+        mt50_test_batch(folder, config, itr, algo, start, end, timestamp)
     else:
         print('Please provide a pkl file')
