@@ -1,5 +1,7 @@
 import argparse
 import os
+import dateutil.tz
+import datetime
 
 import joblib
 import json
@@ -86,7 +88,7 @@ def maml_test(experiment, config, sess, start_itr, pkl):
     trainer.train(test_time=True)
 
 
-def maml_test_batch(folder, config, start_itr, start, end):
+def maml_test_batch(folder, config, start_itr, start, end, suffix):
 
     config['rollouts_per_meta_task'] = 10
     config['max_path_length'] = 150
@@ -126,10 +128,10 @@ def maml_test_batch(folder, config, start_itr, start, end):
     all_pkls = ['itr_{}.pkl'.format(i) for i in range(start, end)]
     for p in all_pkls:
         full_path = os.path.join(folder, p)
-        eval_single(env, full_path, sampler, sample_processor, config, full_path)
+        eval_single(env, full_path, sampler, sample_processor, config, full_path, suffix)
 
 
-def eval_single(env, pkl_file_path, sampler, sample_processor, config, full_path):
+def eval_single(env, pkl_file_path, sampler, sample_processor, config, full_path, suffix):
     """
     load policy-> replace sampler's policy-> rebuild tf graph wit new session-> eval
     """
@@ -159,7 +161,7 @@ def eval_single(env, pkl_file_path, sampler, sample_processor, config, full_path
                     sess=sess,
                     start_itr=0,
                     pkl=full_path,
-                    name='hard_trainenvs',
+                    name='hard_trainenvs_{}'.format(suffix),
                 )
 
                 trainer.train(test_time=True)
@@ -195,7 +197,8 @@ if __name__=="__main__":
     itr = args.itr
     start = args.start
     end = args.end
-
+    now = datetime.datetime.now(dateutil.tz.tzlocal())
+    timestamp = now.strftime('%Y_%m_%d_%H_%M_%S')
 
     if not config_file:
         config_file = '/root/code/ProMP/corl/configs/hard_mode_config{}.json'.format(idx)
@@ -214,6 +217,6 @@ if __name__=="__main__":
             snapshot_mode='all',)
         config = json.load(open(config_file, 'r'))
         json.dump(config, open(maml_zoo_path + '/data/maml_test/test_{}_{}_{}/params.json'.format(TASKNAME, idx, rand_num), 'w'))
-        maml_test_batch(folder, config, itr, start, end)
+        maml_test_batch(folder, config, itr, start, end, timestamp)
     else:
         print('Please provide a pkl file')
