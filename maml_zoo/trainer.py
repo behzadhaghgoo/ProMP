@@ -53,7 +53,7 @@ class Trainer(object):
         assert self.pkl is not None
         # open a csv file to log all
         # evaluation
-        test_csv = '/root/code/ProMP/test_rl2_{}.csv'.format(name)
+        test_csv = '/root/code/ProMP/test_{}.csv'.format(name)
         if os.path.exists(test_csv):
             self.test_csv = open(test_csv, 'a+')
         else:

@@ -86,7 +86,7 @@ def maml_test(experiment, config, sess, start_itr, pkl):
     trainer.train(test_time=True)
 
 
-def maml_test_batch(folder, config, start_itr):
+def maml_test_batch(folder, config, start_itr, start, end):
 
     config['rollouts_per_meta_task'] = 10
     config['max_path_length'] = 150
@@ -123,7 +123,7 @@ def maml_test_batch(folder, config, start_itr):
         envs_per_task=config['envs_per_task'],
     )
 
-    all_pkls = [f for f in listdir(folder) if '.pkl' in f]
+    all_pkls = ['itr_{}.pkl'.format(i) for i in range(start, end)]
     for p in all_pkls:
         full_path = os.path.join(folder, p)
         eval_single(env, full_path, sampler, sample_processor, config, full_path)
@@ -181,6 +181,11 @@ if __name__=="__main__":
     parser.add_argument('--itr', metavar='itr', type=int,
                     help='The start itr of the resuming experiment', 
                     default=0, required=False)
+
+    parser.add_argument('--start', metavar='start', type=int,
+                    default=0, required=False)
+    parser.add_argument('--end', metavar='end', type=int,
+                    default=0, required=False)
     args = parser.parse_args()
 
     rand_num = np.random.uniform()
@@ -189,6 +194,9 @@ if __name__=="__main__":
     folder = args.dir
     config_file = args.config
     itr = args.itr
+
+    start = args.start
+    end = args.end
 
     from os import listdir
     from os.path import isfile
@@ -212,6 +220,6 @@ if __name__=="__main__":
             snapshot_mode='all',)
         config = json.load(open(config_file, 'r'))
         json.dump(config, open(maml_zoo_path + '/data/maml_test/test_{}_{}_{}/params.json'.format(TASKNAME, idx, rand_num), 'w'))
-        maml_test_batch(folder, config, itr)
+        maml_test_batch(folder, config, itr, start, end)
     else:
         print('Please provide a pkl file')
