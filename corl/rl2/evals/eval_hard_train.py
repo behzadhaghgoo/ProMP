@@ -86,7 +86,7 @@ def rl2_eval(experiment, config, sess, start_itr, pkl):
     sys.exit(0)
 
 
-def rl2_eval_batch(folder, config, start_itr):
+def rl2_eval_batch(folder, config, start_itr, start, end, suffix):
 
     from metaworld.envs.mujoco.env_dict import HARD_MODE_CLS_DICT, HARD_MODE_ARGS_KWARGS
     env = MultiClassMultiTaskEnv(
@@ -120,13 +120,13 @@ def rl2_eval_batch(folder, config, start_itr):
         envs_per_task=config['envs_per_task']
     )
 
-    all_pkls = [f for f in listdir(folder) if '.pkl' in f]
+    all_pkls = ['itr_{}.pkl'.format(i) for i in range(start, end)]
     for p in all_pkls:
         full_path = os.path.join(folder, p)
-        eval_single(env, full_path, sampler, sample_processor, config)
+        eval_single(env, full_path, sampler, sample_processor, config, suffix)
 
 
-def eval_single(env, pkl_file_path, sampler, sample_processor, config):
+def eval_single(env, pkl_file_path, sampler, sample_processor, config, suffix):
     """
     load policy-> replace sampler's policy-> rebuild tf graph wit new session-> eval
     """
@@ -153,7 +153,7 @@ def eval_single(env, pkl_file_path, sampler, sample_processor, config):
                     start_itr=0,  # This is not important since we have pickle filename
                     meta_batch_size=config['meta_batch_size'],
                     pkl=pkl_file_path,
-                    name='hard_trainenvs',
+                    name='hard_trainenvs_{}'.format(suffix),
                 )
 
                 trainer.train(test_time=True)
@@ -173,8 +173,13 @@ if __name__=="__main__":
                     help='The path to the config file', 
                     default=None, required=False)
     parser.add_argument('--itr', metavar='itr', type=int,
-                    help='The start itr of the resuming experiment', 
+                    help='The start itr of the resuming experiment',
                     default=0, required=False)
+    parser.add_argument('--start', metavar='start', type=int,
+                    default=0, required=False)
+    parser.add_argument('--end', metavar='end', type=int,
+                    default=0, required=False)
+
     args = parser.parse_args()
 
     rand_num = np.random.uniform()
@@ -183,15 +188,13 @@ if __name__=="__main__":
     folder = args.dir
     config_file = args.config
     itr = args.itr
+    start = args.start
+    end = args.end
 
-    from os import listdir
-    from os.path import isfile
-    import os.path
-    pkls = [file for file in listdir(folder) if '.pkl' in file]
+    config_file = '/root/code/ProMP/corl/rl2/configs/hard_mode_config{}.json'.format(idx)
+    now = datetime.datetime.now(dateutil.tz.tzlocal())
+    timestamp = now.strftime('%Y_%m_%d_%H_%M_%S')
 
-    if not config_file:
-        config_file = '/root/code/ProMP/corl/rl2/configs/hard_mode_config{}.json'.format(idx)
-    
     if pkl:
         with tf.Session() as sess:
             with open(pkl, 'rb') as file:
@@ -205,7 +208,6 @@ if __name__=="__main__":
         logger.configure(dir=maml_zoo_path + '/data/rl2_test/test_{}_{}_{}'.format(TASKNAME, idx, rand_num), format_strs=['stdout', 'log', 'csv'],
                     snapshot_mode='all',)
         config = json.load(open(config_file, 'r'))
-        json.dump(config, open(maml_zoo_path + '/data/rl2_test/test_{}_{}_{}/params.json'.format(TASKNAME, idx, rand_num), 'w'))
-        rl2_eval_batch(folder, config, itr)
+        rl2_eval_batch(folder, config, itr, start, end, timestamp)
     else:
         print('Please provide a pkl file')
