@@ -80,7 +80,7 @@ def rl2_eval(experiment, config, sess, start_itr, pkl):
         start_itr=start_itr,
         meta_batch_size=config['meta_batch_size'],
         pkl=pkl,
-        name='hard_trainenvs',
+        name='hard_testenvs',
     )
 
     trainer.train(test_time=True)
@@ -93,8 +93,8 @@ def rl2_eval_batch(folder, config, start_itr, start, end, suffix):
 
     test_cls = HARD_MODE_CLS_DICT['test']
     test_args = HARD_MODE_ARGS_KWARGS['test']
-    test_cls[28] = HARD_MODE_CLS_DICT['train']['28']
-    test_args[28] = HARD_MODE_ARGS_KWARGS['train']['28']
+    test_cls[28] = HARD_MODE_CLS_DICT['train'][28]
+    test_args[28] = HARD_MODE_ARGS_KWARGS['train'][28]
 
     env = MultiClassMultiTaskEnv(
         task_env_cls_dict=test_cls,
@@ -160,7 +160,7 @@ def eval_single(env, pkl_file_path, sampler, sample_processor, config, suffix):
                     start_itr=0,  # This is not important since we have pickle filename
                     meta_batch_size=config['meta_batch_size'],
                     pkl=pkl_file_path,
-                    name='hard_trainenvs',
+                    name='hard_testenvs_{}'.format(suffix),
                 )
 
                 trainer.train(test_time=True)
