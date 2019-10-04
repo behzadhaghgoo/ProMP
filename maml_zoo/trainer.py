@@ -83,7 +83,12 @@ class Trainer(object):
             # initialize uninitialized vars  (only initialize vars that were not loaded)
             uninit_vars = [var for var in tf.global_variables() if not sess.run(tf.is_variable_initialized(var))]
             sess.run(tf.variables_initializer(uninit_vars))
-
+            
+            if test_time:
+                out_name = itr = int(self.pkl.split('_')[-1].split['.'][0])
+                print(out_name)
+                with open('evals_data/paths_{}.pkl'.format(out_name), 'wb') as fout:
+                    pickle.dump(samples_data, fout)
             start_time = time.time()
             for itr in range(self.start_itr, self.n_itr):
                 self.task = self.env.sample_tasks(self.sampler.meta_batch_size)

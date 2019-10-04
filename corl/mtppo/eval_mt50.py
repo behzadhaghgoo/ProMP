@@ -206,6 +206,7 @@ def eval_single(env, pkl_file_path, sampler, sample_processor, config, algo_name
                     n_itr=config['n_itr'],
                     name='mt50_{}_{}'.format(algo_name, suffix),
                     pkl=full_path,
+                    sess=sess,
                 )
 
                 trainer.train(test_time=True)
