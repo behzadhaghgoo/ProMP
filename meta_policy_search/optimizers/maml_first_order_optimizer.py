@@ -44,8 +44,9 @@ class MAMLFirstOrderOptimizer(Optimizer):
         self._train_op = None
         self._loss = None
         self._input_ph_dict = None
-        
-    def build_graph(self, loss, target, input_ph_dict):
+        self._loss_list = None
+
+    def build_graph(self, loss, target, input_ph_dict, loss_list=None):
         """
         Sets the objective function and target weights for the optimize function
 
@@ -61,6 +62,7 @@ class MAMLFirstOrderOptimizer(Optimizer):
         self._target = target
         self._input_ph_dict = input_ph_dict
         self._loss = loss
+        self._loss_list = loss_list
         self._train_op = self._tf_optimizer.minimize(loss, var_list=target.get_params())
 
     def loss(self, input_val_dict):
@@ -77,6 +79,12 @@ class MAMLFirstOrderOptimizer(Optimizer):
         sess = tf.get_default_session()
         feed_dict = self.create_feed_dict(input_val_dict)
         loss = sess.run(self._loss, feed_dict=feed_dict)
+        return loss
+
+    def loss_list(self, input_val_dict):
+        sess = tf.get_default_session()
+        feed_dict = self.create_feed_dict(input_val_dict)
+        loss = sess.run(self._loss_list, feed_dict=feed_dict)
         return loss
 
     def optimize(self, input_val_dict):
@@ -161,6 +169,3 @@ class MAMLPPOOptimizer(MAMLFirstOrderOptimizer):
         feed_dict = self.create_feed_dict(input_val_dict)
         loss, inner_kl, outer_kl = sess.run([self._loss, self._inner_kl, self._outer_kl], feed_dict=feed_dict)
         return loss, inner_kl, outer_kl
-
-
-

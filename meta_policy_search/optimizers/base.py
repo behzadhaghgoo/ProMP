@@ -4,10 +4,10 @@ class Optimizer(object):
     def __init__(self):
         self._input_ph_dict = None
 
-    def build_graph(self, loss, target, input_ph_dict):
+    def build_graph(self, loss, target, input_ph_dict, loss_list=None):
         """
         Sets the objective function and target weights for the optimize function
-        
+
         Args:
             loss (tf_op) : minimization objective
             target (Policy) : Policy whose values we are optimizing over
@@ -36,6 +36,9 @@ class Optimizer(object):
             (float): value of the loss
 
         """
+        raise NotImplementedError
+
+    def loss_list(self, input_val_dict):
         raise NotImplementedError
 
     def create_feed_dict(self, input_val_dict):

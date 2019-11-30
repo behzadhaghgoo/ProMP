@@ -149,8 +149,9 @@ class ConjugateGradientOptimizer(Optimizer):
         self._gradient = None
         self._constraint_objective = None
         self._input_ph_dict = None
+        self._loss_list = None
 
-    def build_graph(self, loss, target, input_ph_dict, leq_constraint):
+    def build_graph(self, loss, target, input_ph_dict, leq_constraint, loss_list=None):
         """
         Sets the objective function and target weights for the optimize function
 
@@ -164,7 +165,7 @@ class ConjugateGradientOptimizer(Optimizer):
         assert isinstance(loss, tf.Tensor)
         assert hasattr(target, 'get_params')
         assert isinstance(input_ph_dict, dict)
-        
+
         constraint_objective, constraint_value = leq_constraint
 
         self._target = target
@@ -172,6 +173,7 @@ class ConjugateGradientOptimizer(Optimizer):
         self._max_constraint_val = constraint_value
         self._input_ph_dict = input_ph_dict
         self._loss = loss
+        self._loss_list = loss_list
 
         # build the graph of the hessian vector product (hvp)
         self._hvp_approach.build_graph(constraint_objective, target, self._input_ph_dict, self._reg_coeff)
@@ -201,6 +203,12 @@ class ConjugateGradientOptimizer(Optimizer):
         sess = tf.get_default_session()
         feed_dict = self.create_feed_dict(input_val_dict)
         loss = sess.run(self._loss, feed_dict=feed_dict)
+        return loss
+
+    def loss_list(self, input_val_dict):
+        sess = tf.get_default_session()
+        feed_dict = self.create_feed_dict(input_val_dict)
+        loss = sess.run(self._loss_list, feed_dict=feed_dict)
         return loss
 
     def constraint_val(self, input_val_dict):

@@ -4,7 +4,7 @@ import time
 from meta_policy_search.utils import logger
 
 
-class Trainer(object):
+class KAML_Trainer(object):
     """
     Performs steps of meta-policy search.
 
@@ -33,9 +33,9 @@ class Trainer(object):
     """
     def __init__(
             self,
-            algo,
-            envs,
-            samplers,
+            algos,
+            env,
+            sampler,
             sample_processor,
             policy,
             n_itr,
@@ -43,9 +43,10 @@ class Trainer(object):
             num_inner_grad_steps=1,
             sess=None,
             ):
-        self.algo = algo
-        self.envs = envs
-        self.samplers = samplers
+        self.algos= algos
+        self.theta_count = 2
+        self.env = env
+        self.sampler = sampler
         self.sample_processor = sample_processor
         self.baseline = sample_processor.baseline
         self.policy = policy
@@ -81,23 +82,22 @@ class Trainer(object):
                 logger.log("\n ---------------- Iteration %d ----------------" % itr)
                 logger.log("Sampling set of tasks/goals for this meta-batch...")
 
-                for sampler in self.samplers:
-                    sampler.update_tasks()
+                self.sampler.update_tasks()
                 self.policy.switch_to_pre_update()  # Switch to pre-update policy
 
                 all_samples_data, all_paths = [], []
                 list_sampling_time, list_inner_step_time, list_outer_step_time, list_proc_samples_time = [], [], [], []
                 start_total_inner_time = time.time()
-                for step in range(self.num_inner_grad_steps+1):
+                algo_all_samples = []
+                #WARNING: CODE ONLY WORKS WITH 1
+                for step in range(1):
                     logger.log('** Step ' + str(step) + ' **')
 
                     """ -------------------- Sampling --------------------------"""
-                    
+
                     logger.log("Obtaining samples...")
                     time_env_sampling_start = time.time()
-                    
-                    sampler = np.random.choice(self.samplers, p=[0.5, 0.5])
-                    paths = sampler.obtain_samples(log=True, log_prefix='Step_%d-' % step)
+                    paths = self.sampler.obtain_samples(log=True, log_prefix='Step_%d-' % step)
                     list_sampling_time.append(time.time() - time_env_sampling_start)
                     all_paths.append(paths)
 
@@ -112,13 +112,28 @@ class Trainer(object):
                     self.log_diagnostics(sum(list(paths.values()), []), prefix='Step_%d-' % step)
 
                     """ ------------------- Inner Policy Update --------------------"""
+                    sess = tf.get_default_session()
+                    inner_loop_losses = []
+                    for algo in algos[:self.theta_count]:
+                        time_inner_step_start = time.time()
+                        if step < self.num_inner_grad_steps:
+                            logger.log("Computing inner policy updates...")
+                            loss_list = algo._adapt(samples_data) # Do one inner step
+                            inner_loop_losses.append(loss_list)
+                            # self.algo.policy.policies_params_vals
+                    import numpy as np
+                    algo_batches = [[] for _ in range(self.theta_count)]
 
-                    time_inner_step_start = time.time()
-                    if step < self.num_inner_grad_steps:
-                        logger.log("Computing inner policy updates...")
-                        self.algo._adapt(samples_data)
-                    # train_writer = tf.summary.FileWriter('/home/ignasi/Desktop/meta_policy_search_graph',
-                    #                                      sess.graph)
+                    # algo_ind = algos[np.argmin(np.array(inner_loop_losses), axis = 0)]
+                    # min_loss = np.min(np.array(inner_loop_losses), axis = 0)
+                    indices = np.argmin(np.array(inner_loop_losses), axis = 0)
+                    for i in range(samples_data.shape[0]):
+                        index = indices[i]
+                        algo_batches[index].append(samples_data[i])
+
+                    algo_all_samples.append(algo_batches)
+
+
                     list_inner_step_time.append(time.time() - time_inner_step_start)
                 total_inner_time = time.time() - start_total_inner_time
 
@@ -128,11 +143,12 @@ class Trainer(object):
                 logger.log("Optimizing policy...")
                 # This needs to take all samples_data so that it can construct graph for meta-optimization.
                 time_outer_step_start = time.time()
-                self.algo.optimize_policy(all_samples_data)
+                for index in range(self.theta_count):
+                    algos[index].optimize_policy([algo_batches[index] for algo_batches in algo_all_samples])
 
                 """ ------------------- Logging Stuff --------------------------"""
                 logger.logkv('Itr', itr)
-                logger.logkv('n_timesteps', [sampler.total_timesteps_sampled for sampler in self.samplers])
+                logger.logkv('n_timesteps', self.sampler.total_timesteps_sampled)
 
                 logger.logkv('Time-OuterStep', time.time() - time_outer_step_start)
                 logger.logkv('Time-TotalInner', total_inner_time)
@@ -158,10 +174,10 @@ class Trainer(object):
         """
         Gets the current policy and env for storage
         """
-        return dict(itr=itr, policy=self.policy, env=self.envs, baseline=self.baseline)
+        return dict(itr=itr, policy=self.policy, env=self.env, baseline=self.baseline)
 
     def log_diagnostics(self, paths, prefix):
         # TODO: we aren't using it so far
-        #self.envs.log_diagnostics(paths, prefix)
+        self.env.log_diagnostics(paths, prefix)
         self.policy.log_diagnostics(paths, prefix)
         self.baseline.log_diagnostics(paths, prefix)

@@ -89,7 +89,7 @@ class MetaAlgo(object):
 class MAMLAlgo(MetaAlgo):
     """
     Provides some implementations shared between all MAML algorithms
-    
+
     Args:
         policy (Policy): policy object
         inner_lr (float) : gradient step size used for inner step
@@ -118,7 +118,7 @@ class MAMLAlgo(MetaAlgo):
             prefix (str) : a string to prepend to the name of each variable
 
         Returns:
-            (tuple) : a tuple containing lists of placeholders for each input type and meta task, 
+            (tuple) : a tuple containing lists of placeholders for each input type and meta task,
             and for convenience, a list containing all placeholders created
         """
         obs_phs, action_phs, adv_phs, dist_info_phs, dist_info_phs_list = [], [], [], [], []
@@ -240,6 +240,9 @@ class MAMLAlgo(MetaAlgo):
 
         # store the new parameter values in the policy
         self.policy.update_task_parameters(adapted_policies_params_vals)
+
+        loss_list = sess.run(self.optimizer._loss_list, feed_dict=feed_dict)
+        return loss_list
 
 
     def _extract_input_dict(self, samples_data_meta_batch, keys, prefix=''):

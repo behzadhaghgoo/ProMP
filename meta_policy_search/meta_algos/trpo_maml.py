@@ -50,7 +50,7 @@ class TRPOMAML(MAMLAlgo):
         if self.inner_type == 'likelihood_ratio':
             with tf.variable_scope("likelihood_ratio"):
                 likelihood_ratio_adapt = self.policy.distribution.likelihood_ratio_sym(action_sym,
-                                                                                       dist_info_old_sym, 
+                                                                                       dist_info_old_sym,
                                                                                        dist_info_new_sym)
             with tf.variable_scope("surrogate_loss"):
                 surr_obj_adapt = -tf.reduce_mean(likelihood_ratio_adapt * adv_sym)
@@ -149,13 +149,15 @@ class TRPOMAML(MAMLAlgo):
             mean_outer_kl = tf.reduce_mean(tf.stack(outer_kls))
 
             """ Mean over meta tasks """
-            meta_objective = tf.reduce_mean(tf.stack(surr_objs, 0))
+            loss_list = tf.stack(surr_objs, 0)
+            meta_objective = tf.reduce_mean(loss_list)
 
             self.optimizer.build_graph(
                 loss=meta_objective,
                 target=self.policy,
                 input_ph_dict=self.meta_op_phs_dict,
                 leq_constraint=(mean_outer_kl, self.step_size),
+                loss_list=loss_list
             )
 
     def optimize_policy(self, all_samples_data, log=True):
@@ -183,6 +185,7 @@ class TRPOMAML(MAMLAlgo):
 
         logger.log("Computing KL after")
         mean_kl = self.optimizer.constraint_val(meta_op_input_dict)
+
         if log:
             logger.logkv('MeanKLBefore', mean_kl_before)
             logger.logkv('MeanKL', mean_kl)
