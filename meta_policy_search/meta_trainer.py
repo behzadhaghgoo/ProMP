@@ -34,8 +34,8 @@ class Trainer(object):
     def __init__(
             self,
             algo,
-            env,
-            sampler,
+            envs,
+            samplers,
             sample_processor,
             policy,
             n_itr,
@@ -44,8 +44,8 @@ class Trainer(object):
             sess=None,
             ):
         self.algo = algo
-        self.env = env
-        self.sampler = sampler
+        self.envs = envs
+        self.samplers = samplers
         self.sample_processor = sample_processor
         self.baseline = sample_processor.baseline
         self.policy = policy
@@ -81,7 +81,8 @@ class Trainer(object):
                 logger.log("\n ---------------- Iteration %d ----------------" % itr)
                 logger.log("Sampling set of tasks/goals for this meta-batch...")
 
-                self.sampler.update_tasks()
+                for sampler in self.samplers:
+                    sampler.update_tasks()
                 self.policy.switch_to_pre_update()  # Switch to pre-update policy
 
                 all_samples_data, all_paths = [], []
@@ -91,10 +92,12 @@ class Trainer(object):
                     logger.log('** Step ' + str(step) + ' **')
 
                     """ -------------------- Sampling --------------------------"""
-
+                    
                     logger.log("Obtaining samples...")
                     time_env_sampling_start = time.time()
-                    paths = self.sampler.obtain_samples(log=True, log_prefix='Step_%d-' % step)
+                    
+                    sampler = np.random.choice(self.samplers, p=[0.5, 0.5])
+                    paths = sampler.obtain_samples(log=True, log_prefix='Step_%d-' % step)
                     list_sampling_time.append(time.time() - time_env_sampling_start)
                     all_paths.append(paths)
 
@@ -129,7 +132,7 @@ class Trainer(object):
 
                 """ ------------------- Logging Stuff --------------------------"""
                 logger.logkv('Itr', itr)
-                logger.logkv('n_timesteps', self.sampler.total_timesteps_sampled)
+                logger.logkv('n_timesteps', [sampler.total_timesteps_sampled for sampler in self.samplers])
 
                 logger.logkv('Time-OuterStep', time.time() - time_outer_step_start)
                 logger.logkv('Time-TotalInner', total_inner_time)
@@ -155,10 +158,10 @@ class Trainer(object):
         """
         Gets the current policy and env for storage
         """
-        return dict(itr=itr, policy=self.policy, env=self.env, baseline=self.baseline)
+        return dict(itr=itr, policy=self.policy, env=self.envs, baseline=self.baseline)
 
     def log_diagnostics(self, paths, prefix):
         # TODO: we aren't using it so far
-        self.env.log_diagnostics(paths, prefix)
+        #self.envs.log_diagnostics(paths, prefix)
         self.policy.log_diagnostics(paths, prefix)
         self.baseline.log_diagnostics(paths, prefix)

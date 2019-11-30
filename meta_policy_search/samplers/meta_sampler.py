@@ -25,6 +25,8 @@ class MetaSampler(Sampler):
     def __init__(
             self,
             env,
+            max_obs_dim,
+            task_action_dim,
             policy,
             rollouts_per_meta_task,
             meta_batch_size,
@@ -40,6 +42,8 @@ class MetaSampler(Sampler):
         self.total_samples = meta_batch_size * rollouts_per_meta_task * max_path_length
         self.parallel = parallel
         self.total_timesteps_sampled = 0
+        self.max_obs_dim = np.prod(max_obs_dim)
+        self.task_action_dim = np.prod(task_action_dim)
 
         # setup vectorized environment
 
@@ -88,14 +92,33 @@ class MetaSampler(Sampler):
             
             # execute policy
             t = time.time()
+            
+            # pad obs 
+            extra_dim = self.max_obs_dim - obses[0].shape[0]
+            extra_arr = np.zeros(extra_dim,)
+            obses = [np.concatenate([obs, extra_arr], axis=-1) for obs in obses]
+            
             obs_per_task = np.split(np.asarray(obses), self.meta_batch_size)
             actions, agent_infos = policy.get_actions(obs_per_task)
             policy_time += time.time() - t
 
             # step environments
             t = time.time()
+            
+            # slice action 
+            #actions = actions[:, :self.task_action_dim]
+            
             actions = np.concatenate(actions) # stack meta batch
-            next_obses, rewards, dones, env_infos = self.vec_env.step(actions)
+            #actions = actions[:, :self.task_action_dim]
+            #print(len(actions))
+            #print(actions[0].shape)
+            next_obses, rewards, dones, env_infos = self.vec_env.step(actions[:, :self.task_action_dim])
+            
+            # pad next obs 
+            extra_dim = self.max_obs_dim - obses[0].shape[0]
+            extra_arr = np.zeros(extra_dim, )
+            next_obses = [np.concatenate([next_obs, extra_arr], axis=-1) for next_obs in next_obses]
+            
             env_time += time.time() - t
 
             #  stack agent_infos and if no infos were provided (--> None) create empty dicts

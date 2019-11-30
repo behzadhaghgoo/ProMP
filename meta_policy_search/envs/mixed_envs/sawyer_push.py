@@ -1,5 +1,3 @@
-import sys
-sys.path.append('~/multiworld/')
 from multiworld.envs.mujoco.sawyer_xyz.push.sawyer_push import SawyerPushEnv as SawyerEnv
 from multiworld.core.flat_goal_env import FlatGoalEnv
 import numpy as np

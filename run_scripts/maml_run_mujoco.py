@@ -1,5 +1,6 @@
 from meta_policy_search.baselines.linear_baseline import LinearFeatureBaseline
 from meta_policy_search.envs.mujoco_envs.half_cheetah_rand_direc import HalfCheetahRandDirecEnv
+from meta_policy_search.envs.mujoco_envs.ant_rand_direc import AntRandDirecEnv
 from meta_policy_search.envs.normalized_env import normalize
 from meta_policy_search.meta_algos.trpo_maml import TRPOMAML
 from meta_policy_search.meta_trainer import Trainer
@@ -20,28 +21,32 @@ meta_policy_search_path = '/'.join(os.path.realpath(os.path.dirname(__file__)).s
 def main(config):
     set_seed(config['seed'])
 
-
     baseline =  globals()[config['baseline']]() #instantiate baseline
 
-    env = globals()[config['env']]() # instantiate env
-    env = normalize(env) # apply normalize wrapper to env
+    envs = [globals()[env]() for env in config['env']]
+    envs = [normalize(env) for env in envs] # apply normalize wrapper to env
 
+    max_action_dim = np.max([env.action_space.shape[0] for env in envs])
+    max_obs_dim = np.max([env.observation_space.shape[0] for env in envs])
+    
     policy = MetaGaussianMLPPolicy(
             name="meta-policy",
-            obs_dim=np.prod(env.observation_space.shape),
-            action_dim=np.prod(env.action_space.shape),
+            obs_dim=max_obs_dim,
+            action_dim=max_action_dim,
             meta_batch_size=config['meta_batch_size'],
             hidden_sizes=config['hidden_sizes'],
         )
 
-    sampler = MetaSampler(
+    samplers = [MetaSampler(
         env=env,
+        max_obs_dim=max_obs_dim,
+        task_action_dim=env.action_space.shape[0],
         policy=policy,
         rollouts_per_meta_task=config['rollouts_per_meta_task'],  # This batch_size is confusing
         meta_batch_size=config['meta_batch_size'],
         max_path_length=config['max_path_length'],
         parallel=config['parallel'],
-    )
+    ) for env in envs] 
 
     sample_processor = MetaSampleProcessor(
         baseline=baseline,
@@ -63,13 +68,12 @@ def main(config):
     trainer = Trainer(
         algo=algo,
         policy=policy,
-        env=env,
-        sampler=sampler,
+        envs=envs,
+        samplers=samplers,
         sample_processor=sample_processor,
         n_itr=config['n_itr'],
         num_inner_grad_steps=config['num_inner_grad_steps'],
     )
-
     trainer.train()
 
 if __name__=="__main__":
@@ -93,7 +97,7 @@ if __name__=="__main__":
 
             'baseline': 'LinearFeatureBaseline',
 
-            'env': 'HalfCheetahRandDirecEnv',
+            'env': ['HalfCheetahRandDirecEnv', 'AntRandDirecEnv'],
 
             # sampler config
             'rollouts_per_meta_task': 20,
@@ -121,7 +125,7 @@ if __name__=="__main__":
         }
 
     # configure logger
-    logger.configure(dir=args.dump_path, format_strs=['stdout', 'log', 'csv'],
+    logger.configure(dir=args.dump_path, format_strs=['stdout', 'log', 'csv', 'tensorboard'],
                      snapshot_mode='last_gap')
 
     # dump run configuration before starting training
@@ -129,3 +133,4 @@ if __name__=="__main__":
 
     # start the actual algorithm
     main(config)
+
