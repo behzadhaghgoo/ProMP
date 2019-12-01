@@ -1,7 +1,7 @@
 [![Build Status](https://api.travis-ci.com/jonasrothfuss/ProMP.svg?branch=master)](https://travis-ci.com/jonasrothfuss/ProMP)
 [![Docs](https://readthedocs.org/projects/promp/badge/?version=latest)](https://promp.readthedocs.io)
 
-# K-AML
+# Clustered Meta Learning
 
 
 Implementations corresponding to ProMP ([Rothfuss et al., 2018](https://arxiv.org/abs/1810.06784)). 
