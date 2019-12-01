@@ -233,15 +233,20 @@ class MAMLAlgo(MetaAlgo):
         feed_dict_inputs = utils.create_feed_dict(placeholder_dict=input_ph_dict, value_dict=input_dict)
         feed_dict_params = self.policy.policies_params_feed_dict
 
+        
         feed_dict = {**feed_dict_inputs, **feed_dict_params}  # merge the two feed dicts
-
+#         from copy import deepcopy
+#         feed_dict2 = deepcopy(feed_dict)
         # compute the post-update / adapted policy parameters
         adapted_policies_params_vals = sess.run(self.adapted_policies_params, feed_dict=feed_dict)
-
+#         assert feed_dict == feed_dict2, "feed_dict problem"
         # store the new parameter values in the policy
         self.policy.update_task_parameters(adapted_policies_params_vals)
-
-        loss_list = sess.run(self.optimizer._loss_list, feed_dict=feed_dict)
+        
+#         meta_op_input_dict = self._extract_input_dict_meta_op([samples], self._optimization_keys)
+        
+#         feed_dict = self.optimizer.create_feed_dict(meta_op_input_dict)
+        loss_list = sess.run(self.all_surr_objs, feed_dict=feed_dict)
         return loss_list
 
 
@@ -294,7 +299,7 @@ class MAMLAlgo(MetaAlgo):
         Returns:
 
         """
-        assert len(all_samples_data) == self.num_inner_grad_steps + 1
+#         assert len(all_samples_data) == self.num_inner_grad_steps + 1
 
         meta_op_input_dict = OrderedDict()
         for step_id, samples_data in enumerate(all_samples_data):  # these are the gradient steps

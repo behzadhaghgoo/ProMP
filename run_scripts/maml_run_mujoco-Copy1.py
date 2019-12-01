@@ -3,7 +3,7 @@ from meta_policy_search.envs.mujoco_envs.half_cheetah_rand_direc import HalfChee
 from meta_policy_search.envs.mujoco_envs.ant_rand_direc import AntRandDirecEnv
 from meta_policy_search.envs.normalized_env import normalize
 from meta_policy_search.meta_algos.trpo_maml import TRPOMAML
-from meta_policy_search.meta_trainer import KAML_Trainer
+from meta_policy_search.meta_trainer import Trainer
 from meta_policy_search.samplers.meta_sampler import MetaSampler
 from meta_policy_search.samplers.meta_sample_processor import MetaSampleProcessor
 from meta_policy_search.policies.meta_gaussian_mlp_policy import MetaGaussianMLPPolicy
@@ -36,7 +36,7 @@ def main(config):
             meta_batch_size=config['meta_batch_size'],
             hidden_sizes=config['hidden_sizes'],
         )
-    print("create sampler")
+
     samplers = [MetaSampler(
         env=env,
         max_obs_dim=max_obs_dim,
@@ -47,39 +47,33 @@ def main(config):
         max_path_length=config['max_path_length'],
         parallel=config['parallel'],
     ) for env in envs] 
-    print("create sample processor")
+
     sample_processor = MetaSampleProcessor(
         baseline=baseline,
         discount=config['discount'],
         gae_lambda=config['gae_lambda'],
         normalize_adv=config['normalize_adv'],
     )
-    print("create algorithms")
-    num_clusters_upper_lim = 1
-    algos = []
-    for i in range(num_clusters_upper_lim):
-        print(i)
-        algos.append(TRPOMAML(
-            policy=policy,
-            step_size=config['step_size'],
-            inner_type=config['inner_type'],
-            inner_lr=config['inner_lr'],
-            meta_batch_size=config['meta_batch_size'],
-            num_inner_grad_steps=config['num_inner_grad_steps'],
-            exploration=False,
-        ))
-    print("define trainer")
-    trainer = KAML_Trainer(
-        algos=algos,
+
+    algo = TRPOMAML(
+        policy=policy,
+        step_size=config['step_size'],
+        inner_type=config['inner_type'],
+        inner_lr=config['inner_lr'],
+        meta_batch_size=config['meta_batch_size'],
+        num_inner_grad_steps=config['num_inner_grad_steps'],
+        exploration=False,
+    )
+
+    trainer = Trainer(
+        algo=algo,
         policy=policy,
         envs=envs,
         samplers=samplers,
         sample_processor=sample_processor,
         n_itr=config['n_itr'],
         num_inner_grad_steps=config['num_inner_grad_steps'],
-        theta_count = num_clusters_upper_lim
     )
-    print("start training")
     trainer.train()
 
 if __name__=="__main__":
@@ -136,7 +130,7 @@ if __name__=="__main__":
 
     # dump run configuration before starting training
     json.dump(config, open(args.dump_path + '/params.json', 'w'), cls=ClassEncoder)
-    
+
     # start the actual algorithm
     main(config)
 

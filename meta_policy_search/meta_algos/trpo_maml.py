@@ -36,7 +36,7 @@ class TRPOMAML(MAMLAlgo):
         self.inner_type = inner_type
         self.name = name
         self._optimization_keys = ['observations', 'actions', 'advantages', 'agent_infos']
-
+        self.all_surr_objs = None
         self.exploration = exploration
         if exploration: # add adjusted average rewards tp optimization keys
             self._optimization_keys.append('adj_avg_rewards')
@@ -122,6 +122,7 @@ class TRPOMAML(MAMLAlgo):
                                           for i in range(self.meta_batch_size)]
                 current_policy_params = adapted_policy_params
 
+            self.all_surr_objs = all_surr_objs
             """ Outer objective """
             surr_objs, outer_kls = [], []
 
