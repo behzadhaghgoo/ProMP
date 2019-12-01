@@ -85,7 +85,6 @@ class MetaAlgo(object):
         raise NotImplementedError
 
 
-
 class MAMLAlgo(MetaAlgo):
     """
     Provides some implementations shared between all MAML algorithms
@@ -97,6 +96,7 @@ class MAMLAlgo(MetaAlgo):
         num_inner_grad_steps (int) : number of gradient updates taken per maml iteration
         trainable_inner_step_size (boolean): whether make the inner step size a trainable variable
     """
+
     def __init__(self, policy, inner_lr=0.1, meta_batch_size=20, num_inner_grad_steps=1, trainable_inner_step_size=False):
         super(MAMLAlgo, self).__init__(policy)
 
@@ -106,9 +106,11 @@ class MAMLAlgo(MetaAlgo):
         self.inner_lr = float(inner_lr)
         self.meta_batch_size = meta_batch_size
         self.num_inner_grad_steps = num_inner_grad_steps
-        self.trainable_inner_step_size = trainable_inner_step_size #TODO: make sure this actually works
+        # TODO: make sure this actually works
+        self.trainable_inner_step_size = trainable_inner_step_size
 
         self.adapt_input_ph_dict = None
+        self.loss_list = None
         self.adapted_policies_params = None
         self.step_sizes = None
 
@@ -128,25 +130,31 @@ class MAMLAlgo(MetaAlgo):
 
         for task_id in range(self.meta_batch_size):
             # observation ph
-            ph = tf.placeholder(dtype=tf.float32, shape=[None, self.policy.obs_dim], name='obs' + '_' + prefix + '_' + str(task_id))
-            all_phs_dict['%s_task%i_%s'%(prefix, task_id, 'observations')] = ph
+            ph = tf.placeholder(dtype=tf.float32, shape=[
+                                None, self.policy.obs_dim], name='obs' + '_' + prefix + '_' + str(task_id))
+            all_phs_dict['%s_task%i_%s' %
+                         (prefix, task_id, 'observations')] = ph
             obs_phs.append(ph)
 
             # action ph
-            ph = tf.placeholder(dtype=tf.float32, shape=[None, self.policy.action_dim], name='action' + '_' + prefix + '_' + str(task_id))
+            ph = tf.placeholder(dtype=tf.float32, shape=[
+                                None, self.policy.action_dim], name='action' + '_' + prefix + '_' + str(task_id))
             all_phs_dict['%s_task%i_%s' % (prefix, task_id, 'actions')] = ph
             action_phs.append(ph)
 
             # advantage ph
-            ph = tf.placeholder(dtype=tf.float32, shape=[None], name='advantage' + '_' + prefix + '_' + str(task_id))
+            ph = tf.placeholder(dtype=tf.float32, shape=[
+                                None], name='advantage' + '_' + prefix + '_' + str(task_id))
             all_phs_dict['%s_task%i_%s' % (prefix, task_id, 'advantages')] = ph
             adv_phs.append(ph)
 
             # distribution / agent info
             dist_info_ph_dict = {}
             for info_key, shape in dist_info_specs:
-                ph = tf.placeholder(dtype=tf.float32, shape=[None] + list(shape), name='%s_%s_%i' % (info_key, prefix, task_id))
-                all_phs_dict['%s_task%i_agent_infos/%s' % (prefix, task_id, info_key)] = ph
+                ph = tf.placeholder(dtype=tf.float32, shape=[
+                                    None] + list(shape), name='%s_%s_%i' % (info_key, prefix, task_id))
+                all_phs_dict['%s_task%i_agent_infos/%s' %
+                             (prefix, task_id, info_key)] = ph
                 dist_info_ph_dict[info_key] = ph
             dist_info_phs.append(dist_info_ph_dict)
 
@@ -168,9 +176,11 @@ class MAMLAlgo(MetaAlgo):
             adapt_input_list_ph (list): list of placeholders
 
         """
-        obs_phs, action_phs, adv_phs, dist_info_old_phs, adapt_input_ph_dict = self._make_input_placeholders('adapt')
+        obs_phs, action_phs, adv_phs, dist_info_old_phs, adapt_input_ph_dict = self._make_input_placeholders(
+            'adapt')
 
         adapted_policies_params = []
+        loss_list = []
 
         for i in range(self.meta_batch_size):
             with tf.variable_scope("adapt_task_%i" % i):
@@ -184,10 +194,12 @@ class MAMLAlgo(MetaAlgo):
 
                 # get tf operation for adapted (post-update) policy
                 with tf.variable_scope("adapt_step"):
-                    adapted_policy_param = self._adapt_sym(surr_obj_adapt, self.policy.policies_params_phs[i])
+                    adapted_policy_param = self._adapt_sym(
+                        surr_obj_adapt, self.policy.policies_params_phs[i])
                 adapted_policies_params.append(adapted_policy_param)
+                loss_list.append(surr_obj_adapt)
 
-        return adapted_policies_params, adapt_input_ph_dict
+        return adapted_policies_params, adapt_input_ph_dict, loss_list
 
     def _adapt_sym(self, surr_obj, params_var):
         """
@@ -203,14 +215,16 @@ class MAMLAlgo(MetaAlgo):
         # TODO: Fix this if we want to learn the learning rate (it isn't supported right now).
         update_param_keys = list(params_var.keys())
 
-        grads = tf.gradients(surr_obj, [params_var[key] for key in update_param_keys])
+        grads = tf.gradients(surr_obj, [params_var[key]
+                                        for key in update_param_keys])
         gradients = dict(zip(update_param_keys, grads))
 
         # gradient descent
         adapted_policy_params = [params_var[key] - tf.multiply(self.step_sizes[key], gradients[key])
-                          for key in update_param_keys]
+                                 for key in update_param_keys]
 
-        adapted_policy_params_dict = OrderedDict(zip(update_param_keys, adapted_policy_params))
+        adapted_policy_params_dict = OrderedDict(
+            zip(update_param_keys, adapted_policy_params))
 
         return adapted_policy_params_dict
 
@@ -227,28 +241,26 @@ class MAMLAlgo(MetaAlgo):
         sess = tf.get_default_session()
 
         # prepare feed dict
-        input_dict = self._extract_input_dict(samples, self._optimization_keys, prefix='adapt')
+        input_dict = self._extract_input_dict(
+            samples, self._optimization_keys, prefix='adapt')
         input_ph_dict = self.adapt_input_ph_dict
 
-        feed_dict_inputs = utils.create_feed_dict(placeholder_dict=input_ph_dict, value_dict=input_dict)
+        feed_dict_inputs = utils.create_feed_dict(
+            placeholder_dict=input_ph_dict, value_dict=input_dict)
         feed_dict_params = self.policy.policies_params_feed_dict
 
-        
-        feed_dict = {**feed_dict_inputs, **feed_dict_params}  # merge the two feed dicts
-#         from copy import deepcopy
-#         feed_dict2 = deepcopy(feed_dict)
-        # compute the post-update / adapted policy parameters
-        adapted_policies_params_vals = sess.run(self.adapted_policies_params, feed_dict=feed_dict)
+        # merge the two feed dicts
+        feed_dict = {**feed_dict_inputs, **feed_dict_params}
+        adapted_policies_params_vals, loss_list = sess.run(
+            [self.adapted_policies_params, self.loss_list], feed_dict=feed_dict)
 #         assert feed_dict == feed_dict2, "feed_dict problem"
         # store the new parameter values in the policy
         self.policy.update_task_parameters(adapted_policies_params_vals)
-        
-#         meta_op_input_dict = self._extract_input_dict_meta_op([samples], self._optimization_keys)
-        
-#         feed_dict = self.optimizer.create_feed_dict(meta_op_input_dict)
-        loss_list = sess.run(self.all_surr_objs, feed_dict=feed_dict)
-        return loss_list
 
+#         meta_op_input_dict = self._extract_input_dict_meta_op([samples], self._optimization_keys)
+
+#         feed_dict = self.optimizer.create_feed_dict(meta_op_input_dict)
+        return loss_list
 
     def _extract_input_dict(self, samples_data_meta_batch, keys, prefix=''):
         """
@@ -279,10 +291,12 @@ class MAMLAlgo(MetaAlgo):
                     # if the data instance is a dict -> iterate over the items of this dict
                     for k, d in data.items():
                         assert isinstance(d, np.ndarray)
-                        input_dict['%s_task%i_%s/%s' % (prefix, meta_task, key, k)] = d
+                        input_dict['%s_task%i_%s/%s' %
+                                   (prefix, meta_task, key, k)] = d
 
                 elif isinstance(data, np.ndarray):
-                    input_dict['%s_task%i_%s'%(prefix, meta_task, key)] = data
+                    input_dict['%s_task%i_%s' %
+                               (prefix, meta_task, key)] = data
                 else:
                     raise NotImplementedError
         return input_dict
@@ -302,8 +316,10 @@ class MAMLAlgo(MetaAlgo):
 #         assert len(all_samples_data) == self.num_inner_grad_steps + 1
 
         meta_op_input_dict = OrderedDict()
-        for step_id, samples_data in enumerate(all_samples_data):  # these are the gradient steps
-            dict_input_dict_step = self._extract_input_dict(samples_data, keys, prefix='step%i'%step_id)
+        # these are the gradient steps
+        for step_id, samples_data in enumerate(all_samples_data):
+            dict_input_dict_step = self._extract_input_dict(
+                samples_data, keys, prefix='step%i' % step_id)
             meta_op_input_dict.update(dict_input_dict_step)
 
         return meta_op_input_dict
@@ -314,7 +330,8 @@ class MAMLAlgo(MetaAlgo):
             step_sizes = dict()
             for key, param in self.policy.policy_params.items():
                 shape = param.get_shape().as_list()
-                init_stepsize = np.ones(shape, dtype=np.float32) * self.inner_lr
+                init_stepsize = np.ones(
+                    shape, dtype=np.float32) * self.inner_lr
                 step_sizes[key] = tf.Variable(initial_value=init_stepsize,
                                               name='%s_step_size' % key,
                                               dtype=tf.float32, trainable=self.trainable_inner_step_size)
