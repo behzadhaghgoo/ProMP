@@ -4,6 +4,7 @@ import time
 from meta_policy_search.utils import logger
 import numpy as np
 
+
 class Trainer(object):
     """
     Performs steps of meta-policy search.
@@ -31,6 +32,7 @@ class Trainer(object):
         num_inner_grad_steps (int) : Number of inner steps per maml iteration
         sess (tf.Session) : current tf session (if we loaded policy, for example)
     """
+
     def __init__(
             self,
             algo,
@@ -42,7 +44,7 @@ class Trainer(object):
             start_itr=0,
             num_inner_grad_steps=1,
             sess=None,
-            ):
+    ):
         self.algo = algo
         self.envs = envs
         self.samplers = samplers
@@ -72,14 +74,17 @@ class Trainer(object):
         with self.sess.as_default() as sess:
 
             # initialize uninitialized vars  (only initialize vars that were not loaded)
-            uninit_vars = [var for var in tf.global_variables() if not sess.run(tf.is_variable_initialized(var))]
+            uninit_vars = [var for var in tf.global_variables(
+            ) if not sess.run(tf.is_variable_initialized(var))]
             sess.run(tf.variables_initializer(uninit_vars))
 
             start_time = time.time()
             for itr in range(self.start_itr, self.n_itr):
                 itr_start_time = time.time()
-                logger.log("\n ---------------- Iteration %d ----------------" % itr)
-                logger.log("Sampling set of tasks/goals for this meta-batch...")
+                logger.log(
+                    "\n ---------------- Iteration %d ----------------" % itr)
+                logger.log(
+                    "Sampling set of tasks/goals for this meta-batch...")
 
                 for sampler in self.samplers:
                     sampler.update_tasks()
@@ -92,24 +97,29 @@ class Trainer(object):
                     logger.log('** Step ' + str(step) + ' **')
 
                     """ -------------------- Sampling --------------------------"""
-                    
+
                     logger.log("Obtaining samples...")
                     time_env_sampling_start = time.time()
-                    
+
                     sampler = np.random.choice(self.samplers, p=[0.5, 0.5])
-                    paths = sampler.obtain_samples(log=True, log_prefix='Step_%d-' % step)
-                    list_sampling_time.append(time.time() - time_env_sampling_start)
+                    paths = sampler.obtain_samples(
+                        log=True, log_prefix='Step_%d-' % step)
+                    list_sampling_time.append(
+                        time.time() - time_env_sampling_start)
                     all_paths.append(paths)
 
                     """ ----------------- Processing Samples ---------------------"""
 
                     logger.log("Processing samples...")
                     time_proc_samples_start = time.time()
-                    samples_data = self.sample_processor.process_samples(paths, log='all', log_prefix='Step_%d-' % step)
+                    samples_data = self.sample_processor.process_samples(
+                        paths, log='all', log_prefix='Step_%d-' % step)
                     all_samples_data.append(samples_data)
-                    list_proc_samples_time.append(time.time() - time_proc_samples_start)
+                    list_proc_samples_time.append(
+                        time.time() - time_proc_samples_start)
 
-                    self.log_diagnostics(sum(list(paths.values()), []), prefix='Step_%d-' % step)
+                    self.log_diagnostics(
+                        sum(list(paths.values()), []), prefix='Step_%d-' % step)
 
                     """ ------------------- Inner Policy Update --------------------"""
 
@@ -119,7 +129,8 @@ class Trainer(object):
                         self.algo._adapt(samples_data)
                     # train_writer = tf.summary.FileWriter('/home/ignasi/Desktop/meta_policy_search_graph',
                     #                                      sess.graph)
-                    list_inner_step_time.append(time.time() - time_inner_step_start)
+                    list_inner_step_time.append(
+                        time.time() - time_inner_step_start)
                 total_inner_time = time.time() - start_total_inner_time
 
                 time_maml_opt_start = time.time()
@@ -132,9 +143,11 @@ class Trainer(object):
 
                 """ ------------------- Logging Stuff --------------------------"""
                 logger.logkv('Itr', itr)
-                logger.logkv('n_timesteps', [sampler.total_timesteps_sampled for sampler in self.samplers])
+                logger.logkv('n_timesteps', [
+                             sampler.total_timesteps_sampled for sampler in self.samplers])
 
-                logger.logkv('Time-OuterStep', time.time() - time_outer_step_start)
+                logger.logkv('Time-OuterStep', time.time() -
+                             time_outer_step_start)
                 logger.logkv('Time-TotalInner', total_inner_time)
                 logger.logkv('Time-InnerStep', np.sum(list_inner_step_time))
                 logger.logkv('Time-SampleProc', np.sum(list_proc_samples_time))
@@ -142,7 +155,8 @@ class Trainer(object):
 
                 logger.logkv('Time', time.time() - start_time)
                 logger.logkv('ItrTime', time.time() - itr_start_time)
-                logger.logkv('Time-MAMLSteps', time.time() - time_maml_opt_start)
+                logger.logkv('Time-MAMLSteps', time.time() -
+                             time_maml_opt_start)
 
                 logger.log("Saving snapshot...")
                 params = self.get_itr_snapshot(itr)
@@ -166,7 +180,6 @@ class Trainer(object):
         self.policy.log_diagnostics(paths, prefix)
         self.baseline.log_diagnostics(paths, prefix)
 
-        
 
 class KAML_Trainer(object):
     """
@@ -195,6 +208,7 @@ class KAML_Trainer(object):
         num_inner_grad_steps (int) : Number of inner steps per maml iteration
         sess (tf.Session) : current tf session (if we loaded policy, for example)
     """
+
     def __init__(
             self,
             algos,
@@ -206,12 +220,12 @@ class KAML_Trainer(object):
             start_itr=0,
             num_inner_grad_steps=1,
             sess=None,
-            theta_count = 1
-            ):
+            theta_count=1
+    ):
         print("initialize KAML trainer")
         self.algos = algos
         self.theta_count = theta_count
-        
+
         self.envs = envs
         self.samplers = samplers
         self.sample_processor = sample_processor
@@ -240,44 +254,52 @@ class KAML_Trainer(object):
         with self.sess.as_default() as sess:
 
             # initialize uninitialized vars  (only initialize vars that were not loaded)
-            uninit_vars = [var for var in tf.global_variables() if not sess.run(tf.is_variable_initialized(var))]
+            uninit_vars = [var for var in tf.global_variables(
+            ) if not sess.run(tf.is_variable_initialized(var))]
             sess.run(tf.variables_initializer(uninit_vars))
 
             start_time = time.time()
             for itr in range(self.start_itr, self.n_itr):
                 itr_start_time = time.time()
-                logger.log("\n ---------------- Iteration %d ----------------" % itr)
-                logger.log("Sampling set of tasks/goals for this meta-batch...")
+                logger.log(
+                    "\n ---------------- Iteration %d ----------------" % itr)
+                logger.log(
+                    "Sampling set of tasks/goals for this meta-batch...")
 
                 for sampler in self.samplers:
                     sampler.update_tasks()
                 self.policy.switch_to_pre_update()  # Switch to pre-update policy
 
-                all_samples_data, all_paths = [], []
+                all_samples_data, all_paths, algo_all_samples = [], [], []
                 list_sampling_time, list_inner_step_time, list_outer_step_time, list_proc_samples_time = [], [], [], []
                 start_total_inner_time = time.time()
                 for step in range(self.num_inner_grad_steps+1):
                     logger.log('** Step ' + str(step) + ' **')
 
                     """ -------------------- Sampling --------------------------"""
-                    
+
                     logger.log("Obtaining samples...")
                     time_env_sampling_start = time.time()
-                    
+
                     sampler = np.random.choice(self.samplers, p=[0.5, 0.5])
-                    paths = sampler.obtain_samples(log=True, log_prefix='Step_%d-' % step)
-                    list_sampling_time.append(time.time() - time_env_sampling_start)
+                    paths = sampler.obtain_samples(
+                        log=True, log_prefix='Step_%d-' % step)
+                    list_sampling_time.append(
+                        time.time() - time_env_sampling_start)
                     all_paths.append(paths)
 
                     """ ----------------- Processing Samples ---------------------"""
 
                     logger.log("Processing samples...")
                     time_proc_samples_start = time.time()
-                    samples_data = self.sample_processor.process_samples(paths, log='all', log_prefix='Step_%d-' % step)
+                    samples_data = self.sample_processor.process_samples(
+                        paths, log='all', log_prefix='Step_%d-' % step)
                     all_samples_data.append(samples_data)
-                    list_proc_samples_time.append(time.time() - time_proc_samples_start)
+                    list_proc_samples_time.append(
+                        time.time() - time_proc_samples_start)
 
-                    self.log_diagnostics(sum(list(paths.values()), []), prefix='Step_%d-' % step)
+                    self.log_diagnostics(
+                        sum(list(paths.values()), []), prefix='Step_%d-' % step)
 
                     """ ------------------- Inner Policy Update --------------------"""
 
@@ -287,24 +309,23 @@ class KAML_Trainer(object):
                         time_inner_step_start = time.time()
                         if step < self.num_inner_grad_steps:
                             logger.log("Computing inner policy updates...")
-                            logger.log("len(samples_data) = {}".format(len(samples_data)))
-                            loss_list = algo._adapt(samples_data)[-1] # Do one inner step
+                            logger.log("len(samples_data) = {}".format(
+                                len(samples_data)))
+                            loss_list = algo._adapt(samples_data)
                             inner_loop_losses.append(loss_list)
                             # self.algo.policy.policies_params_vals
-                    
+
                     algo_batches = [[] for _ in range(self.theta_count)]
 
-                    # algo_ind = algos[np.argmin(np.array(inner_loop_losses), axis = 0)]
-                    # min_loss = np.min(np.array(inner_loop_losses), axis = 0)
-                    indices = np.argmin(np.array(inner_loop_losses), axis = 0)
-                    for i in range(samples_data.shape[0]):
+                    indices = np.argmin(np.array(inner_loop_losses), axis=0)
+                    for i in range(len(samples_data)):
                         index = indices[i]
                         algo_batches[index].append(samples_data[i])
 
                     algo_all_samples.append(algo_batches)
 
-
-                    list_inner_step_time.append(time.time() - time_inner_step_start)
+                    list_inner_step_time.append(
+                        time.time() - time_inner_step_start)
                 total_inner_time = time.time() - start_total_inner_time
 
                 time_maml_opt_start = time.time()
@@ -314,13 +335,17 @@ class KAML_Trainer(object):
                 # This needs to take all samples_data so that it can construct graph for meta-optimization.
                 time_outer_step_start = time.time()
                 for index in range(self.theta_count):
-                    self.algos[index].optimize_policy([algo_batches[index] for algo_batches in algo_all_samples])
+                    all_samples_index_data = [algo_batches[index]
+                                              for algo_batches in algo_all_samples]
+                    self.algos[index].optimize_policy(all_samples_index_data)
 
                 """ ------------------- Logging Stuff --------------------------"""
                 logger.logkv('Itr', itr)
-                logger.logkv('n_timesteps', [sampler.total_timesteps_sampled for sampler in self.samplers])
+                logger.logkv('n_timesteps', [
+                             sampler.total_timesteps_sampled for sampler in self.samplers])
 
-                logger.logkv('Time-OuterStep', time.time() - time_outer_step_start)
+                logger.logkv('Time-OuterStep', time.time() -
+                             time_outer_step_start)
                 logger.logkv('Time-TotalInner', total_inner_time)
                 logger.logkv('Time-InnerStep', np.sum(list_inner_step_time))
                 logger.logkv('Time-SampleProc', np.sum(list_proc_samples_time))
@@ -328,7 +353,8 @@ class KAML_Trainer(object):
 
                 logger.logkv('Time', time.time() - start_time)
                 logger.logkv('ItrTime', time.time() - itr_start_time)
-                logger.logkv('Time-MAMLSteps', time.time() - time_maml_opt_start)
+                logger.logkv('Time-MAMLSteps', time.time() -
+                             time_maml_opt_start)
 
                 logger.log("Saving snapshot...")
                 params = self.get_itr_snapshot(itr)
@@ -351,5 +377,3 @@ class KAML_Trainer(object):
         #self.envs.log_diagnostics(paths, prefix)
         self.policy.log_diagnostics(paths, prefix)
         self.baseline.log_diagnostics(paths, prefix)
-
-        
