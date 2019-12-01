@@ -313,16 +313,16 @@ class KAML_Trainer(object):
                                 len(samples_data)))
                             loss_list = algo._adapt(samples_data)
                             inner_loop_losses.append(loss_list)
-                            # self.algo.policy.policies_params_vals
 
-                    algo_batches = [[] for _ in range(self.theta_count)]
+                    if step < self.num_inner_grad_steps:
+                        algo_batches = [[] for _ in range(self.theta_count)]
 
-                    indices = np.argmin(np.array(inner_loop_losses), axis=0)
-                    for i in range(len(samples_data)):
-                        index = indices[i]
-                        algo_batches[index].append(samples_data[i])
+                        indices = np.argmin(inner_loop_losses, axis=0)
+                        for i in range(len(samples_data)):
+                            index = indices[i]
+                            algo_batches[index].append(samples_data[i])
 
-                    algo_all_samples.append(algo_batches)
+                        algo_all_samples.append(algo_batches)
 
                     list_inner_step_time.append(
                         time.time() - time_inner_step_start)
