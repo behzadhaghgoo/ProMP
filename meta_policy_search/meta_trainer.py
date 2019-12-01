@@ -270,8 +270,6 @@ class KAML_Trainer(object):
                     sampler.update_tasks()
                 self.policy.switch_to_pre_update()  # Switch to pre-update policy
 
-                meta_batch_size = self.samplers[0].meta_batch_size // len(
-                    self.samplers)
                 all_samples_data, all_paths, algo_all_samples = [], [], []
                 list_sampling_time, list_inner_step_time, list_outer_step_time, list_proc_samples_time = [], [], [], []
                 start_total_inner_time = time.time()
@@ -282,14 +280,10 @@ class KAML_Trainer(object):
 
                     logger.log("Obtaining samples...")
                     time_env_sampling_start = time.time()
-                    paths = []
-                    for sampler in self.samplers:
-                        paths.extend(sampler.obtain_samples(
-                            log=True, log_prefix='Step_%d-' % step))
-                    paths = np.array(paths)
-                    paths = list(paths[np.random.choice(
-                        len(paths), size=meta_batch_size, replace=False)])
-                    # sampler = np.random.choice(self.samplers, p=[0.5, 0.5])
+
+                    sampler = np.random.choice(self.samplers, p=[0.5, 0.5])
+                    paths = sampler.obtain_samples(
+                        log=True, log_prefix='Step_%d-' % step)
                     list_sampling_time.append(
                         time.time() - time_env_sampling_start)
                     all_paths.append(paths)
