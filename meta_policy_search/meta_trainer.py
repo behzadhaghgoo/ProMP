@@ -220,7 +220,7 @@ class KAML_Trainer(object):
             start_itr=0,
             num_inner_grad_steps=1,
             sess=None,
-            theta_count=1
+            theta_count=2
     ):
         print("initialize KAML trainer")
         self.algos = algos
@@ -307,7 +307,6 @@ class KAML_Trainer(object):
                         inner_loop_losses = []
 
                     for algo in self.algos[:self.theta_count]:
-                        print("algo:", algo)
                         time_inner_step_start = time.time()
                         if step < self.num_inner_grad_steps:
                             logger.log("Computing inner policy updates...")
