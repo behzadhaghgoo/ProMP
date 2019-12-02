@@ -273,6 +273,7 @@ class KAML_Trainer(object):
                 all_samples_data, all_paths, algo_all_samples = [], [], []
                 list_sampling_time, list_inner_step_time, list_outer_step_time, list_proc_samples_time = [], [], [], []
                 start_total_inner_time = time.time()
+                inner_loop_losses = []
                 for step in range(self.num_inner_grad_steps+1):
                     logger.log('** Step ' + str(step) + ' **')
 
@@ -302,8 +303,9 @@ class KAML_Trainer(object):
                         sum(list(paths.values()), []), prefix='Step_%d-' % step)
 
                     """ ------------------- Inner Policy Update --------------------"""
+                    if step < self.num_inner_grad_steps:
+                        inner_loop_losses = []
 
-                    inner_loop_losses = []
                     for algo in self.algos[:self.theta_count]:
                         print("algo:", algo)
                         time_inner_step_start = time.time()
@@ -314,15 +316,14 @@ class KAML_Trainer(object):
                             loss_list = algo._adapt(samples_data)
                             inner_loop_losses.append(loss_list)
 
-                    if step < self.num_inner_grad_steps:
-                        algo_batches = [[] for _ in range(self.theta_count)]
+                    algo_batches = [[] for _ in range(self.theta_count)]
 
-                        indices = np.argmin(inner_loop_losses, axis=0)
-                        for i in range(len(samples_data)):
-                            index = indices[i]
-                            algo_batches[index].append(samples_data[i])
+                    indices = np.argmin(inner_loop_losses, axis=0)
+                    for i in range(len(samples_data)):
+                        index = indices[i]
+                        algo_batches[index].append(samples_data[i])
 
-                        algo_all_samples.append(algo_batches)
+                    algo_all_samples.append(algo_batches)
 
                     list_inner_step_time.append(
                         time.time() - time_inner_step_start)
