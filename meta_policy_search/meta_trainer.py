@@ -296,13 +296,10 @@ class KAML_Trainer(object):
                     initial_paths = [sampler.obtain_samples(
                         log=True, log_prefix='Step_%d-' % step) for sampler in self.samplers]
 
-#                     print(len(initial_paths[0]), self.probs, list(range(len(initial_paths))))
                     paths = OrderedDict()
                     for i in range(len(initial_paths[0])):#, Paths in enumerate(zip(*initial_paths)):
                         paths[i] = initial_paths[np.random.choice(list(range(len(initial_paths))), p = self.probs)][i]
-                        
-#                     assert 1 == 2, str(paths)
-                    
+                                            
                     list_sampling_time.append(time.time() - time_env_sampling_start)
                     all_paths.append(paths)
 
@@ -353,9 +350,7 @@ class KAML_Trainer(object):
                 time_outer_step_start = time.time()
                 for index in range(self.theta_count):
                     all_samples_index_data = [algo_batches[index]
-                                              for algo_batches in algo_all_samples if len(algo_batches[index]) > 0]
-                    if len(all_samples_index_data) == 0:
-                        continue
+                                              for algo_batches in algo_all_samples]
                     self.algos[index].optimize_policy(all_samples_index_data)
 
                 """ ------------------- Logging Stuff --------------------------"""
