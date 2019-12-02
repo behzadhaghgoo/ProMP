@@ -336,7 +336,9 @@ class KAML_Trainer(object):
                 time_outer_step_start = time.time()
                 for index in range(self.theta_count):
                     all_samples_index_data = [algo_batches[index]
-                                              for algo_batches in algo_all_samples]
+                                              for algo_batches in algo_all_samples if len(algo_batches[index]) > 0]
+                    if len(all_samples_index_data) == 0:
+                        continue
                     self.algos[index].optimize_policy(all_samples_index_data)
 
                 """ ------------------- Logging Stuff --------------------------"""

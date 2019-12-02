@@ -279,7 +279,6 @@ class MAMLAlgo(MetaAlgo):
         # assert len(samples_data_meta_batch) == self.meta_batch_size
 
         input_dict = OrderedDict()
-        print(len(samples_data_meta_batch))
         for meta_task, sample_data in enumerate(samples_data_meta_batch):
             extracted_data = utils.extract(sample_data, *keys)
 
