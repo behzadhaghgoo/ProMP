@@ -157,9 +157,9 @@ def create_feed_dict(placeholder_dict, value_dict):
 
     """
     print(len(set(placeholder_dict.keys())), len(set(value_dict.keys())))
-    print(set(placeholder_dict.keys(), set(value_dict.keys())))
-    assert set(placeholder_dict.keys()) <= set(value_dict.keys()), \
-        "value dict must provide the necessary data to serve all placeholders in placeholder_dict"
+    print(set(placeholder_dict.keys()), set(value_dict.keys()))
+    assert set(placeholder_dict.keys()) <= set(value_dict.keys(
+    )), "value dict must provide the necessary data to serve all placeholders in placeholder_dict"
     # match the placeholders with their values
     return dict([(placeholder_dict[key], value_dict[key]) for key in placeholder_dict.keys()])
 
