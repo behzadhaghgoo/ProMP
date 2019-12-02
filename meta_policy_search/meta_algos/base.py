@@ -276,11 +276,49 @@ class MAMLAlgo(MetaAlgo):
             OrderedDict containing the data from all_samples_data. The data keys follow the naming convention:
                 '<prefix>_task<task_number>_<key_name>'
         """
+        input_dict = OrderedDict()
+        for meta_task in range(self.meta_batch_size):
+            extracted_data = utils.extract(
+                samples_data_meta_batch[meta_task], *keys
+            )
+
+            # iterate over the desired data instances and corresponding keys
+            for j, (data, key) in enumerate(zip(extracted_data, keys)):
+                if isinstance(data, dict):
+                    # if the data instance is a dict -> iterate over the items of this dict
+                    for k, d in data.items():
+                        assert isinstance(d, np.ndarray)
+                        input_dict['%s_task%i_%s/%s' %
+                                   (prefix, meta_task, key, k)] = d
+
+                elif isinstance(data, np.ndarray):
+                    input_dict['%s_task%i_%s' %
+                               (prefix, meta_task, key)] = data
+                else:
+                    raise NotImplementedError
+        return input_dict
+
+    def _extract_input_dict_new(self, samples_data_meta_batch, keys, prefix=''):
+        """
+        Re-arranges a list of dicts containing the processed sample data into a OrderedDict that can be matched
+        with a placeholder dict for creating a feed dict
+
+        Args:
+            samples_data_meta_batch (list) : list of dicts containing the processed data corresponding to each meta-task
+            keys (list) : a list of keys that should exist in each dict and whose values shall be extracted
+            prefix (str): prefix to prepend the keys in the resulting OrderedDict
+
+        Returns:
+            OrderedDict containing the data from all_samples_data. The data keys follow the naming convention:
+                '<prefix>_task<task_number>_<key_name>'
+        """
         # assert len(samples_data_meta_batch) == self.meta_batch_size
 
         input_dict = OrderedDict()
-
-        for meta_task, sample_data in enumerate(samples_data_meta_batch):
+        # print(len(samples_data_meta_batch))
+        # print(len(samples_data_meta_batch[0]))
+        for meta_task, sample_data in samples_data_meta_batch:
+            # print(sample_data)
             extracted_data = utils.extract(sample_data, *keys)
 
             # iterate over the desired data instances and corresponding keys
@@ -336,7 +374,7 @@ class MAMLAlgo(MetaAlgo):
         meta_op_input_dict = OrderedDict()
         # these are the gradient steps
         for step_id, samples_data in enumerate(all_samples_data):
-            dict_input_dict_step = self._extract_input_dict(
+            dict_input_dict_step = self._extract_input_dict_new(
                 samples_data, keys, prefix='step%i' % step_id)
             meta_op_input_dict.update(dict_input_dict_step)
 
