@@ -3,6 +3,7 @@ import scipy
 import scipy.signal
 import json
 
+
 def get_original_tf_name(name):
     """
     Args:
@@ -26,8 +27,10 @@ def remove_scope_from_name(name, scope):
     result = result[1:] if result[0] == '/' else result
     return result.split(":")[0]
 
+
 def remove_first_scope_from_name(name):
     return name.replace(name + '/', "").split(":")[0]
+
 
 def get_last_scope(name):
     """
@@ -153,10 +156,13 @@ def create_feed_dict(placeholder_dict, value_dict):
     Returns: feed dict
 
     """
+    print(len(set(placeholder_dict.keys())), len(set(value_dict.keys())))
+    print(set(placeholder_dict.keys(), set(value_dict.keys())))
     assert set(placeholder_dict.keys()) <= set(value_dict.keys()), \
         "value dict must provide the necessary data to serve all placeholders in placeholder_dict"
     # match the placeholders with their values
     return dict([(placeholder_dict[key], value_dict[key]) for key in placeholder_dict.keys()])
+
 
 def set_seed(seed):
     """
@@ -175,6 +181,7 @@ def set_seed(seed):
     np.random.seed(seed)
     tf.set_random_seed(seed)
     print('using seed %s' % (str(seed)))
+
 
 class ClassEncoder(json.JSONEncoder):
     def default(self, o):
