@@ -320,7 +320,7 @@ class KAML_Trainer(object):
                     indices = np.argmin(inner_loop_losses, axis=0)
                     for i in range(len(samples_data)):
                         index = indices[i]
-                        algo_batches[index].append(samples_data[i])
+                        algo_batches[index].append((i, samples_data[i]))
 
                     algo_all_samples.append(algo_batches)
 

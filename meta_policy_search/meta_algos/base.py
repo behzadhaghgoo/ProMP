@@ -280,10 +280,8 @@ class MAMLAlgo(MetaAlgo):
 
         input_dict = OrderedDict()
 
-        for meta_task in range(len(samples_data_meta_batch)):
-            extracted_data = utils.extract(
-                samples_data_meta_batch[meta_task], *keys
-            )
+        for meta_task, sample_data in enumerate(samples_data_meta_batch):
+            extracted_data = utils.extract(sample_data, *keys)
 
             # iterate over the desired data instances and corresponding keys
             for j, (data, key) in enumerate(zip(extracted_data, keys)):
@@ -299,6 +297,26 @@ class MAMLAlgo(MetaAlgo):
                                (prefix, meta_task, key)] = data
                 else:
                     raise NotImplementedError
+
+        # for meta_task in range(self.meta_batch_size):
+        #     extracted_data = utils.extract(
+        #         samples_data_meta_batch[meta_task], *keys
+        #     )
+
+        #     # iterate over the desired data instances and corresponding keys
+        #     for j, (data, key) in enumerate(zip(extracted_data, keys)):
+        #         if isinstance(data, dict):
+        #             # if the data instance is a dict -> iterate over the items of this dict
+        #             for k, d in data.items():
+        #                 assert isinstance(d, np.ndarray)
+        #                 input_dict['%s_task%i_%s/%s' %
+        #                            (prefix, meta_task, key, k)] = d
+
+        #         elif isinstance(data, np.ndarray):
+        #             input_dict['%s_task%i_%s' %
+        #                        (prefix, meta_task, key)] = data
+        #         else:
+        #             raise NotImplementedError
         return input_dict
 
     def _extract_input_dict_meta_op(self, all_samples_data, keys):
@@ -313,7 +331,7 @@ class MAMLAlgo(MetaAlgo):
         Returns:
 
         """
-#         assert len(all_samples_data) == self.num_inner_grad_steps + 1
+        assert len(all_samples_data) == self.num_inner_grad_steps + 1
 
         meta_op_input_dict = OrderedDict()
         # these are the gradient steps
