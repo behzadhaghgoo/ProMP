@@ -58,7 +58,7 @@ def main(config):
         normalize_adv=config['normalize_adv'],
     )
     print("create algorithms")
-    num_clusters_upper_lim = 2
+    num_clusters_upper_lim = 1
     algos = []
     for i in range(num_clusters_upper_lim):
         algos.append(TRPOMAML(

@@ -4,6 +4,8 @@ import time
 from meta_policy_search.utils import logger
 import numpy as np
 
+from collections import OrderedDict
+
 
 class Trainer(object):
     """
@@ -220,7 +222,8 @@ class KAML_Trainer(object):
             start_itr=0,
             num_inner_grad_steps=1,
             sess=None,
-            theta_count=2
+            theta_count=2,
+            probs = [0.5, 0.5]
     ):
         print("initialize KAML trainer")
         self.algos = algos
@@ -234,6 +237,10 @@ class KAML_Trainer(object):
         self.n_itr = n_itr
         self.start_itr = start_itr
         self.num_inner_grad_steps = num_inner_grad_steps
+        self.probs = probs
+        
+        assert len(samplers) == len(probs), "len(samplers) = {} != {} = len(probs)".format(len(samplers), len(probs))
+        
         if sess is None:
             sess = tf.Session()
         self.sess = sess
@@ -281,12 +288,22 @@ class KAML_Trainer(object):
 
                     logger.log("Obtaining samples...")
                     time_env_sampling_start = time.time()
+                    
+#                     sampler = np.random.choice(self.samplers, p=[0.5, 0.5])
+#                     paths = sampler.obtain_samples(
+#                         log=True, log_prefix='Step_%d-' % step)
+                    
+                    initial_paths = [sampler.obtain_samples(
+                        log=True, log_prefix='Step_%d-' % step) for sampler in self.samplers]
 
-                    sampler = np.random.choice(self.samplers, p=[0.5, 0.5])
-                    paths = sampler.obtain_samples(
-                        log=True, log_prefix='Step_%d-' % step)
-                    list_sampling_time.append(
-                        time.time() - time_env_sampling_start)
+#                     print(len(initial_paths[0]), self.probs, list(range(len(initial_paths))))
+                    paths = OrderedDict()
+                    for i in range(len(initial_paths[0])):#, Paths in enumerate(zip(*initial_paths)):
+                        paths[i] = initial_paths[np.random.choice(list(range(len(initial_paths))), p = self.probs)][i]
+                        
+#                     assert 1 == 2, str(paths)
+                    
+                    list_sampling_time.append(time.time() - time_env_sampling_start)
                     all_paths.append(paths)
 
                     """ ----------------- Processing Samples ---------------------"""
