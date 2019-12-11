@@ -25,20 +25,20 @@ class MetaSampler(Sampler):
     def __init__(
             self,
             env,
+            rollouts_per_meta_task,
+            max_path_length,
+            meta_batch_size,
             max_obs_dim,
             task_action_dim,
-            policy,
-            rollouts_per_meta_task,
-            meta_batch_size,
-            max_path_length,
             envs_per_task=None,
             parallel=False
             ):
-        super(MetaSampler, self).__init__(env, policy, rollouts_per_meta_task, max_path_length)
+        super(MetaSampler, self).__init__(env, meta_batch_size, max_path_length)
         assert hasattr(env, 'set_task')
 
         self.envs_per_task = rollouts_per_meta_task if envs_per_task is None else envs_per_task
         self.meta_batch_size = meta_batch_size
+        self.max_path_length = max_path_length
         self.total_samples = meta_batch_size * rollouts_per_meta_task * max_path_length
         self.parallel = parallel
         self.total_timesteps_sampled = 0
@@ -60,7 +60,7 @@ class MetaSampler(Sampler):
         assert len(tasks) == self.meta_batch_size
         self.vec_env.set_tasks(tasks)
 
-    def obtain_samples(self, log=False, log_prefix=''):
+    def obtain_samples(self, policy, log=False, log_prefix=''):
         """
         Collect batch_size trajectories from each task
 
@@ -68,7 +68,7 @@ class MetaSampler(Sampler):
             log (boolean): whether to log sampling times
             log_prefix (str) : prefix for logger
 
-        Returns: 
+        Returns:
             (dict) : A dict of paths of size [meta_batch_size] x (batch_size) x [5] x (max_path_length)
         """
 
@@ -83,42 +83,42 @@ class MetaSampler(Sampler):
         pbar = ProgBar(self.total_samples)
         policy_time, env_time = 0, 0
 
-        policy = self.policy
+#         policy = self.policy
 
         # initial reset of envs
         obses = self.vec_env.reset()
-        
+
         while n_samples < self.total_samples:
-            
+
             # execute policy
             t = time.time()
-            
-            # pad obs 
+
+            # pad obs
             extra_dim = self.max_obs_dim - obses[0].shape[0]
             extra_arr = np.zeros(extra_dim,)
             obses = [np.concatenate([obs, extra_arr], axis=-1) for obs in obses]
-            
+
             obs_per_task = np.split(np.asarray(obses), self.meta_batch_size)
             actions, agent_infos = policy.get_actions(obs_per_task)
             policy_time += time.time() - t
 
             # step environments
             t = time.time()
-            
-            # slice action 
+
+            # slice action
             #actions = actions[:, :self.task_action_dim]
-            
+
             actions = np.concatenate(actions) # stack meta batch
             #actions = actions[:, :self.task_action_dim]
             #print(len(actions))
             #print(actions[0].shape)
             next_obses, rewards, dones, env_infos = self.vec_env.step(actions[:, :self.task_action_dim])
-            
-            # pad next obs 
+
+            # pad next obs
             extra_dim = self.max_obs_dim - obses[0].shape[0]
             extra_arr = np.zeros(extra_dim, )
             next_obses = [np.concatenate([next_obs, extra_arr], axis=-1) for next_obs in next_obses]
-            
+
             env_time += time.time() - t
 
             #  stack agent_infos and if no infos were provided (--> None) create empty dicts

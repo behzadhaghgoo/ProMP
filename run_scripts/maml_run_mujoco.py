@@ -1,3 +1,5 @@
+import sys
+sys.path.append('~/ProMP/')
 from meta_policy_search.baselines.linear_baseline import LinearFeatureBaseline
 from meta_policy_search.envs.mujoco_envs.half_cheetah_rand_direc import HalfCheetahRandDirecEnv
 from meta_policy_search.envs.mujoco_envs.ant_rand_direc import AntRandDirecEnv
@@ -31,23 +33,32 @@ def main(config):
     max_action_dim = np.max([env.action_space.shape[0] for env in envs])
     max_obs_dim = np.max([env.observation_space.shape[0] for env in envs])
 
-    policy = MetaGaussianMLPPolicy(
+    num_clusters_upper_lim = 1
+
+    # policy = MetaGaussianMLPPolicy(
+    #     name="meta-policy",
+    #     obs_dim=max_obs_dim,
+    #     action_dim=max_action_dim,
+    #     meta_batch_size=config['meta_batch_size'],
+    #     hidden_sizes=config['hidden_sizes'],
+    # )
+
+    policies = [MetaGaussianMLPPolicy(
         name="meta-policy",
         obs_dim=max_obs_dim,
         action_dim=max_action_dim,
         meta_batch_size=config['meta_batch_size'],
         hidden_sizes=config['hidden_sizes'],
-    )
-    print("create sampler")
+    ) for _ in range(num_clusters_upper_lim)]
+    print("create a sampler for each env")
     samplers = [MetaSampler(
         env=env,
-        max_obs_dim=max_obs_dim,
-        task_action_dim=env.action_space.shape[0],
-        policy=policy,
         # This batch_size is confusing
         rollouts_per_meta_task=config['rollouts_per_meta_task'],
-        meta_batch_size=config['meta_batch_size'],
         max_path_length=config['max_path_length'],
+        meta_batch_size=int(config['meta_batch_size']/len(envs)), # divide by number of envs
+        max_obs_dim=max_obs_dim,
+        task_action_dim=env.action_space.shape[0],
         parallel=config['parallel'],
     ) for env in envs]
     print("create sample processor")
@@ -57,12 +68,12 @@ def main(config):
         gae_lambda=config['gae_lambda'],
         normalize_adv=config['normalize_adv'],
     )
-    print("create algorithms")
-    num_clusters_upper_lim = 1
+    print("create algorithms (thetas)")
+
     algos = []
     for i in range(num_clusters_upper_lim):
         algos.append(TRPOMAML(
-            policy=policy,
+            policy=policies[i],
             step_size=config['step_size'],
             inner_type=config['inner_type'],
             inner_lr=config['inner_lr'],
@@ -73,8 +84,9 @@ def main(config):
     print("define trainer")
     trainer = KAML_Trainer(
         algos=algos,
-        policy=policy,
+        policies=policies,
         envs=envs,
+        env_ids=config['env'],
         samplers=samplers,
         sample_processor=sample_processor,
         n_itr=config['n_itr'],

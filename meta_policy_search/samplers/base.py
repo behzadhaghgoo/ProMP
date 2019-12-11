@@ -13,11 +13,11 @@ class Sampler(object):
         max_path_length (int) : max number of steps per trajectory
     """
 
-    def __init__(self, env, policy, batch_size, max_path_length):
+    def __init__(self, env, batch_size, max_path_length):
         assert hasattr(env, 'reset') and hasattr(env, 'step')
 
         self.env = env
-        self.policy = policy
+        #self.policy = policy
         self.batch_size = batch_size
         self.max_path_length = max_path_length
 
@@ -25,7 +25,7 @@ class Sampler(object):
         """
         Collect batch_size trajectories
 
-        Returns: 
+        Returns:
             (list) : A list of paths.
         """
         raise NotImplementedError
@@ -57,7 +57,7 @@ class SampleProcessor(object):
         assert 0 <= discount <= 1.0, 'discount factor must be in [0,1]'
         assert 0 <= gae_lambda <= 1.0, 'gae_lambda must be in [0,1]'
         assert hasattr(baseline, 'fit') and hasattr(baseline, 'predict')
-        
+
         self.baseline = baseline
         self.discount = discount
         self.gae_lambda = gae_lambda
@@ -171,4 +171,3 @@ class SampleProcessor(object):
         env_infos = utils.concat_tensor_dict_list([path["env_infos"] for path in paths])
         agent_infos = utils.concat_tensor_dict_list([path["agent_infos"] for path in paths])
         return observations, actions, rewards, returns, advantages, env_infos, agent_infos
-
