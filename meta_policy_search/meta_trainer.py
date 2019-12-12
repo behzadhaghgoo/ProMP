@@ -545,7 +545,7 @@ class KAML_Trainer(object):
             for sampler in self.samplers:
                 sampler.update_tasks()
 
-            first_policy = algos[0].policy
+            first_policy = self.algos[0].policy
             first_policy.switch_to_pre_update()
 
             all_samples_data, all_paths, algo_all_samples = [], [], []
