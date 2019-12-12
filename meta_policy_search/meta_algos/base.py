@@ -260,7 +260,7 @@ class MAMLAlgo(MetaAlgo):
 #         meta_op_input_dict = self._extract_input_dict_meta_op([samples], self._optimization_keys)
 
 #         feed_dict = self.optimizer.create_feed_dict(meta_op_input_dict)
-        return loss_list
+        return loss_list, adapted_policies_params_vals
 
     def _extract_input_dict(self, samples_data_meta_batch, keys, prefix=''):
         """
