@@ -555,7 +555,7 @@ class KAML_Trainer(object):
             INITIAL_STEPS = 9
             for step in range(INITIAL_STEPS + 1):
                 initial_paths = [sampler.obtain_samples(
-                    policy=policy, log=True, log_prefix='Step_%d-' % step) for sampler in self.samplers]
+                    policy=first_policy, log=True, log_prefix='Step_%d-' % step) for sampler in self.samplers]
 
                 true_indices = []
                 paths = OrderedDict()
