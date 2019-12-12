@@ -388,8 +388,6 @@ class KAML_Trainer(object):
                         if step == self.num_inner_grad_steps:
                             indices = np.argmin(inner_loop_losses, axis=0)
                             pred_indices = np.array(indices)
-                            print("Clustering Score = {}".format(
-                                np.mean(np.abs(true_indices - pred_indices))))
                             clustering_score = np.abs(
                                 np.mean(np.abs(true_indices - pred_indices)) - 0.5) * 2.0
                             logger.logkv('Clustering Score', clustering_score)
