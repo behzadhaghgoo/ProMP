@@ -44,7 +44,7 @@ class TRPOMAML(MAMLAlgo):
             self._optimization_keys.append('adj_avg_rewards')
 
         self.optimizer = ConjugateGradientOptimizer()
-
+        print("AAA")
         self.build_graph()
 
     def _adapt_objective_sym(self, action_sym, adv_sym, dist_info_old_sym, dist_info_new_sym):
