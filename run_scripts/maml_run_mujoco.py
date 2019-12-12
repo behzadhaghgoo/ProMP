@@ -1,22 +1,22 @@
+import time
+import argparse
+import json
+import os
+import numpy as np
+from meta_policy_search.utils.utils import set_seed, ClassEncoder
+from meta_policy_search.utils import logger
+from meta_policy_search.policies.meta_gaussian_mlp_policy import MetaGaussianMLPPolicy
+from meta_policy_search.samplers.meta_sample_processor import MetaSampleProcessor
+from meta_policy_search.samplers.meta_sampler import MetaSampler
+from meta_policy_search.meta_trainer import KAML_Trainer
+from meta_policy_search.meta_algos.trpo_maml import TRPOMAML
+from meta_policy_search.envs.normalized_env import normalize
+from meta_policy_search.envs.mujoco_envs.ant_rand_direc import AntRandDirecEnv
+from meta_policy_search.envs.mujoco_envs.half_cheetah_rand_direc import HalfCheetahRandDirecEnv
+from meta_policy_search.baselines.linear_baseline import LinearFeatureBaseline
 import sys
 sys.path.append('~/ProMP/')
-from meta_policy_search.baselines.linear_baseline import LinearFeatureBaseline
-from meta_policy_search.envs.mujoco_envs.half_cheetah_rand_direc import HalfCheetahRandDirecEnv
-from meta_policy_search.envs.mujoco_envs.ant_rand_direc import AntRandDirecEnv
-from meta_policy_search.envs.normalized_env import normalize
-from meta_policy_search.meta_algos.trpo_maml import TRPOMAML
-from meta_policy_search.meta_trainer import KAML_Trainer
-from meta_policy_search.samplers.meta_sampler import MetaSampler
-from meta_policy_search.samplers.meta_sample_processor import MetaSampleProcessor
-from meta_policy_search.policies.meta_gaussian_mlp_policy import MetaGaussianMLPPolicy
-from meta_policy_search.utils import logger
-from meta_policy_search.utils.utils import set_seed, ClassEncoder
 
-import numpy as np
-import os
-import json
-import argparse
-import time
 
 meta_policy_search_path = '/'.join(os.path.realpath(
     os.path.dirname(__file__)).split('/')[:-1])
@@ -56,7 +56,8 @@ def main(config):
         # This batch_size is confusing
         rollouts_per_meta_task=config['rollouts_per_meta_task'],
         max_path_length=config['max_path_length'],
-        meta_batch_size=int(config['meta_batch_size']/len(envs)), # divide by number of envs
+        # divide by number of envs
+        meta_batch_size=int(config['meta_batch_size']/len(envs)),
         max_obs_dim=max_obs_dim,
         task_action_dim=env.action_space.shape[0],
         parallel=config['parallel'],
@@ -86,7 +87,7 @@ def main(config):
         algos=algos,
         policies=policies,
         envs=envs,
-        env_ids=config['env'],
+        # env_ids=config['env'],
         samplers=samplers,
         sample_processor=sample_processor,
         n_itr=config['n_itr'],
