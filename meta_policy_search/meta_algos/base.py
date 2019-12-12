@@ -59,7 +59,7 @@ class MetaAlgo(object):
         """
         raise NotImplementedError
 
-    def _adapt(self, samples, size=self.meta_batch_size):
+    def _adapt(self, samples, size=None):
         """
         Performs MAML inner step for each task and stores resulting gradients # (in the policy?)
 
@@ -228,7 +228,7 @@ class MAMLAlgo(MetaAlgo):
 
         return adapted_policy_params_dict
 
-    def _adapt(self, samples, size=self.meta_batch_size):
+    def _adapt(self, samples, size=None):
         """
         Performs MAML inner step for each task and stores the updated parameters in the policy
 
@@ -237,6 +237,7 @@ class MAMLAlgo(MetaAlgo):
 
         """
         # print("len(samples) = {}, self.meta_batch_size = {}".format(len(samples), self.meta_batch_size))
+        size = size if size else self.meta_batch_size
         assert len(samples) == size
         assert [sample_dict.keys() for sample_dict in samples]
         sess = tf.get_default_session()
@@ -263,7 +264,7 @@ class MAMLAlgo(MetaAlgo):
 #         feed_dict = self.optimizer.create_feed_dict(meta_op_input_dict)
         return loss_list, adapted_policies_params_vals
 
-    def _extract_input_dict(self, samples_data_meta_batch, keys, prefix='', size=self.meta_batch_size):
+    def _extract_input_dict(self, samples_data_meta_batch, keys, prefix='', size=None):
         """
         Re-arranges a list of dicts containing the processed sample data into a OrderedDict that can be matched
         with a placeholder dict for creating a feed dict
@@ -277,6 +278,7 @@ class MAMLAlgo(MetaAlgo):
             OrderedDict containing the data from all_samples_data. The data keys follow the naming convention:
                 '<prefix>_task<task_number>_<key_name>'
         """
+        size = size if size else self.meta_batch_size
         input_dict = OrderedDict()
         for meta_task in range(size):
             extracted_data = utils.extract(
