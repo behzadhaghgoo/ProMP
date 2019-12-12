@@ -369,41 +369,6 @@ class KAML_Trainer(object):
                             sum(list(paths.values()), []), prefix='Step_%d-' % step)
 
                         """ ------------------- Inner Policy Update --------------------"""
-#                         if step < self.num_inner_grad_steps:
-#                             inner_loop_losses = []
-
-#                     #for algo in self.algos[:self.theta_count]: already looping over algos now so we don't need this
-#                         time_inner_step_start = time.time()
-#                         if step < self.num_inner_grad_steps:
-#                             logger.log("Computing inner policy updates...")
-#                             loss_list = algo._adapt(samples_data)
-#                             inner_loop_losses.append(loss_list)
-
-#                         indices = np.argmin(inner_loop_losses, axis=0)
-#                         pred_indices = np.array(indices)
-
-#                         print("Clustering Score = {}".format(np.mean(np.abs(true_indices - pred_indices))))
-
-# #                     algo_batches = [[] for _ in range(self.theta_count)]
-# #                     for i in range(len(samples_data)):
-# #                         index = indices[i]
-# #                         algo_batches[index].append((i, samples_data[i]))
-
-# #                     algo_all_samples.append(algo_batches)
-
-#                         list_inner_step_time.append(
-#                             time.time() - time_inner_step_start)
-#                     total_inner_time = time.time() - start_total_inner_time
-
-#                     time_maml_opt_start = time.time()
-#                     """ ------------------ Outer Policy Update ---------------------"""
-
-#                     logger.log("Optimizing policy...")
-#                     # This needs to take all samples_data so that it can construct graph for meta-optimization.
-#                     time_outer_step_start = time.time()
-#                     #all_samples_index_data = [algo_batches[index]
-#                     #                          for algo_batches in algo_all_samples]
-#                     algo.optimize_policy(all_samples_data)
 
                         if step < self.num_inner_grad_steps:
                             inner_loop_losses = []
