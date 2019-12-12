@@ -56,7 +56,7 @@ def main(config):
         # This batch_size is confusing
         rollouts_per_meta_task=config['rollouts_per_meta_task'],
         max_path_length=config['max_path_length'],
-        meta_batch_size=int(config['meta_batch_size']/len(envs)), # divide by number of envs
+        meta_batch_size=int(config['meta_batch_size']), # /len(envs)), # divide by number of envs
         max_obs_dim=max_obs_dim,
         task_action_dim=env.action_space.shape[0],
         parallel=config['parallel'],
@@ -86,7 +86,7 @@ def main(config):
         algos=algos,
         policies=policies,
         envs=envs,
-        env_ids=config['env'],
+#         env_ids=config['env'],
         samplers=samplers,
         sample_processor=sample_processor,
         n_itr=config['n_itr'],

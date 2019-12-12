@@ -336,7 +336,12 @@ class KAML_Trainer(object):
                         true_indices = []
                         paths = OrderedDict()
                         # len(self.envs) == len(initial_paths)
-                        for i in range(len(initial_paths[0]) * len(self.envs)):#, Paths in enumerate(zip(*initial_paths)):
+#                         for i in range(len(initial_paths[0])):#, Paths in enumerate(zip(*initial_paths)):
+#                             index = np.random.choice(list(range(len(initial_paths))), p = self.probs)
+#                             paths[i] = initial_paths[index][i]
+#                             true_indices.append(index)
+
+                        for i in range(len(initial_paths[0])):#, Paths in enumerate(zip(*initial_paths)):
                             index = np.random.choice(list(range(len(initial_paths))), p = self.probs)
                             paths[i] = initial_paths[index][i]
                             true_indices.append(index)
@@ -353,9 +358,9 @@ class KAML_Trainer(object):
                             paths, log='all', log_prefix='Step_%d-' % step)
                         all_samples_data.append(samples_data) # (number of inner updates, meta_batch_size)
 
-                        # DEBUG
-                        print("length of all_samples_data should be 40: {}".format(len(all_samples_data)))
-                        print("all_samples_data[0] shape: {}".format(all_samples_data[0].shape))
+#                         DEBUG
+#                         print("length of all_samples_data should be 40: {}".format(len(all_samples_data)))
+#                         print("all_samples_data[0] shape: {}".format(all_samples_data[0].shape))
 
                         list_proc_samples_time.append(
                             time.time() - time_proc_samples_start)
@@ -364,27 +369,69 @@ class KAML_Trainer(object):
                             sum(list(paths.values()), []), prefix='Step_%d-' % step)
 
                         """ ------------------- Inner Policy Update --------------------"""
+#                         if step < self.num_inner_grad_steps:
+#                             inner_loop_losses = []
+
+#                     #for algo in self.algos[:self.theta_count]: already looping over algos now so we don't need this
+#                         time_inner_step_start = time.time()
+#                         if step < self.num_inner_grad_steps:
+#                             logger.log("Computing inner policy updates...")
+#                             loss_list = algo._adapt(samples_data)
+#                             inner_loop_losses.append(loss_list)
+
+#                         indices = np.argmin(inner_loop_losses, axis=0)
+#                         pred_indices = np.array(indices)
+
+#                         print("Clustering Score = {}".format(np.mean(np.abs(true_indices - pred_indices))))
+
+# #                     algo_batches = [[] for _ in range(self.theta_count)]
+# #                     for i in range(len(samples_data)):
+# #                         index = indices[i]
+# #                         algo_batches[index].append((i, samples_data[i]))
+
+# #                     algo_all_samples.append(algo_batches)
+
+#                         list_inner_step_time.append(
+#                             time.time() - time_inner_step_start)
+#                     total_inner_time = time.time() - start_total_inner_time
+
+#                     time_maml_opt_start = time.time()
+#                     """ ------------------ Outer Policy Update ---------------------"""
+
+#                     logger.log("Optimizing policy...")
+#                     # This needs to take all samples_data so that it can construct graph for meta-optimization.
+#                     time_outer_step_start = time.time()
+#                     #all_samples_index_data = [algo_batches[index]
+#                     #                          for algo_batches in algo_all_samples]
+#                     algo.optimize_policy(all_samples_data)
+
                         if step < self.num_inner_grad_steps:
                             inner_loop_losses = []
 
-                    #for algo in self.algos[:self.theta_count]: already looping over algos now so we don't need this
-                        time_inner_step_start = time.time()
-                        if step < self.num_inner_grad_steps:
-                            logger.log("Computing inner policy updates...")
-                            loss_list = algo._adapt(samples_data)
-                            inner_loop_losses.append(loss_list)
+                        for algo in self.algos[:self.theta_count]:
+                            time_inner_step_start = time.time()
+                            if step == self.num_inner_grad_steps - 1: # Check this line.
+                                logger.log("Computing inner policy updates...")
+                                logger.log("len(samples_data) = {}".format(
+                                    len(samples_data)))
+                                loss_list = algo._adapt(samples_data)
+                                inner_loop_losses.append(loss_list)
 
                         indices = np.argmin(inner_loop_losses, axis=0)
                         pred_indices = np.array(indices)
+                        
+                        clustering_score = np.abs(np.mean(np.abs(true_indices - pred_indices)) - 0.5) * 2.0
+#                         print("Clustering Score = {}".format(clustering_score))
+                             
+                        logger.logkv('Clustering Score', clustering_score)
+                        algo_batches = [[] for _ in range(self.theta_count)]
 
-                        print("Clustering Score = {}".format(np.mean(np.abs(true_indices - pred_indices))))
+                        indices = np.argmin(inner_loop_losses, axis=0)
+                        for i in range(len(samples_data)):
+                            index = indices[i]
+                            algo_batches[index].append((i, samples_data[i]))
 
-#                     algo_batches = [[] for _ in range(self.theta_count)]
-#                     for i in range(len(samples_data)):
-#                         index = indices[i]
-#                         algo_batches[index].append((i, samples_data[i]))
-
-#                     algo_all_samples.append(algo_batches)
+                        algo_all_samples.append(algo_batches)
 
                         list_inner_step_time.append(
                             time.time() - time_inner_step_start)
@@ -396,9 +443,10 @@ class KAML_Trainer(object):
                     logger.log("Optimizing policy...")
                     # This needs to take all samples_data so that it can construct graph for meta-optimization.
                     time_outer_step_start = time.time()
-                    #all_samples_index_data = [algo_batches[index]
-                    #                          for algo_batches in algo_all_samples]
-                    algo.optimize_policy(all_samples_data)
+                    for index in range(self.theta_count):
+                        all_samples_index_data = [algo_batches[index]
+                                                  for algo_batches in algo_all_samples]
+                        self.algos[index].optimize_policy(all_samples_index_data)
 
                 """ ------------------- Logging Stuff --------------------------"""
                 logger.logkv('Itr', itr)
@@ -431,10 +479,11 @@ class KAML_Trainer(object):
         """
         Gets the current policy and env for storage
         """
-        return dict(itr=itr, policy=self.policy, env=self.envs, baseline=self.baseline)
+        return dict(itr=itr, policy=self.policies, env=self.envs, baseline=self.baseline)
 
     def log_diagnostics(self, paths, prefix):
         # TODO: we aren't using it so far
         #self.envs.log_diagnostics(paths, prefix)
-        self.policy.log_diagnostics(paths, prefix)
-        self.baseline.log_diagnostics(paths, prefix)
+#         self.policy.log_diagnostics(paths, prefix)
+#         self.baseline.log_diagnostics(paths, prefix)
+        pass
