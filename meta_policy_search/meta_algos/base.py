@@ -59,7 +59,7 @@ class MetaAlgo(object):
         """
         raise NotImplementedError
 
-    def _adapt(self, samples):
+    def _adapt(self, samples, size=None):
         """
         Performs MAML inner step for each task and stores resulting gradients # (in the policy?)
 
@@ -228,7 +228,7 @@ class MAMLAlgo(MetaAlgo):
 
         return adapted_policy_params_dict
 
-    def _adapt(self, samples):
+    def _adapt(self, samples, size=None):
         """
         Performs MAML inner step for each task and stores the updated parameters in the policy
 
@@ -236,14 +236,15 @@ class MAMLAlgo(MetaAlgo):
             samples (list) : list of dicts of samples (each is a dict) split by meta task
 
         """
-        print("len(samples) = {}, self.meta_batch_size = {}".format(len(samples), self.meta_batch_size))
-        assert len(samples) == self.meta_batch_size
+        # print("len(samples) = {}, self.meta_batch_size = {}".format(len(samples), self.meta_batch_size))
+        size = size if size else self.meta_batch_size
+        assert len(samples) == size
         assert [sample_dict.keys() for sample_dict in samples]
         sess = tf.get_default_session()
 
         # prepare feed dict
         input_dict = self._extract_input_dict(
-            samples, self._optimization_keys, prefix='adapt')
+            samples, self._optimization_keys, prefix='adapt', size=size)
         input_ph_dict = self.adapt_input_ph_dict
 
         feed_dict_inputs = utils.create_feed_dict(
@@ -263,7 +264,7 @@ class MAMLAlgo(MetaAlgo):
 #         feed_dict = self.optimizer.create_feed_dict(meta_op_input_dict)
         return loss_list, adapted_policies_params_vals
 
-    def _extract_input_dict(self, samples_data_meta_batch, keys, prefix=''):
+    def _extract_input_dict(self, samples_data_meta_batch, keys, prefix='', size=None):
         """
         Re-arranges a list of dicts containing the processed sample data into a OrderedDict that can be matched
         with a placeholder dict for creating a feed dict
@@ -277,8 +278,10 @@ class MAMLAlgo(MetaAlgo):
             OrderedDict containing the data from all_samples_data. The data keys follow the naming convention:
                 '<prefix>_task<task_number>_<key_name>'
         """
+        size = size if size else self.meta_batch_size
         input_dict = OrderedDict()
-        for meta_task in range(self.meta_batch_size):
+        print("SIZE %d", size)
+        for meta_task in range(size):
             extracted_data = utils.extract(
                 samples_data_meta_batch[meta_task], *keys
             )
@@ -297,65 +300,6 @@ class MAMLAlgo(MetaAlgo):
                                (prefix, meta_task, key)] = data
                 else:
                     raise NotImplementedError
-        return input_dict
-
-    def _extract_input_dict_new(self, samples_data_meta_batch, keys, prefix=''):
-        """
-        Re-arranges a list of dicts containing the processed sample data into a OrderedDict that can be matched
-        with a placeholder dict for creating a feed dict
-
-        Args:
-            samples_data_meta_batch (list) : list of dicts containing the processed data corresponding to each meta-task
-            keys (list) : a list of keys that should exist in each dict and whose values shall be extracted
-            prefix (str): prefix to prepend the keys in the resulting OrderedDict
-
-        Returns:
-            OrderedDict containing the data from all_samples_data. The data keys follow the naming convention:
-                '<prefix>_task<task_number>_<key_name>'
-        """
-        # assert len(samples_data_meta_batch) == self.meta_batch_size
-
-        input_dict = OrderedDict()
-        # print(len(samples_data_meta_batch))
-        # print(len(samples_data_meta_batch[0]))
-        for meta_task, sample_data in samples_data_meta_batch:
-            # print(sample_data)
-            extracted_data = utils.extract(sample_data, *keys)
-
-            # iterate over the desired data instances and corresponding keys
-            for j, (data, key) in enumerate(zip(extracted_data, keys)):
-                if isinstance(data, dict):
-                    # if the data instance is a dict -> iterate over the items of this dict
-                    for k, d in data.items():
-                        assert isinstance(d, np.ndarray)
-                        input_dict['%s_task%i_%s/%s' %
-                                   (prefix, meta_task, key, k)] = d
-
-                elif isinstance(data, np.ndarray):
-                    input_dict['%s_task%i_%s' %
-                               (prefix, meta_task, key)] = data
-                else:
-                    raise NotImplementedError
-
-        # for meta_task in range(self.meta_batch_size):
-        #     extracted_data = utils.extract(
-        #         samples_data_meta_batch[meta_task], *keys
-        #     )
-
-        #     # iterate over the desired data instances and corresponding keys
-        #     for j, (data, key) in enumerate(zip(extracted_data, keys)):
-        #         if isinstance(data, dict):
-        #             # if the data instance is a dict -> iterate over the items of this dict
-        #             for k, d in data.items():
-        #                 assert isinstance(d, np.ndarray)
-        #                 input_dict['%s_task%i_%s/%s' %
-        #                            (prefix, meta_task, key, k)] = d
-
-        #         elif isinstance(data, np.ndarray):
-        #             input_dict['%s_task%i_%s' %
-        #                        (prefix, meta_task, key)] = data
-        #         else:
-        #             raise NotImplementedError
         return input_dict
 
     def _extract_input_dict_meta_op(self, all_samples_data, keys):

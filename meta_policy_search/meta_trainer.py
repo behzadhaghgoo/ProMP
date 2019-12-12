@@ -578,7 +578,7 @@ class KAML_Trainer(object):
                     if step < INITIAL_STEPS:
                         inner_loop_losses = []
                         logger.log("Computing inner policy updates...")
-                        loss_list, phis = self.algos[0]._adapt(samples_data)
+                        loss_list, phis = self.algos[0]._adapt(samples_data, 1)
                         inner_loop_losses.append(loss_list)
 
                 """ ------------------ Outer Policy Update ---------------------"""
