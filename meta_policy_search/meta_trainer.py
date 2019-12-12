@@ -354,8 +354,8 @@ class KAML_Trainer(object):
                         all_samples_data.append(samples_data) # (number of inner updates, meta_batch_size)
 
                         # DEBUG
-                        print("length of all_samples_data should be 40: {}".format(len(all_samples_data)))
-                        print("all_samples_data[0] shape: {}".format(all_samples_data[0].shape))
+                        # print("length of all_samples_data should be 40: {}".format(len(all_samples_data)))
+                        # print("all_samples_data[0] shape: {}".format(all_samples_data[0].shape))
 
                         list_proc_samples_time.append(
                             time.time() - time_proc_samples_start)
