@@ -374,7 +374,7 @@ class MAMLAlgo(MetaAlgo):
         meta_op_input_dict = OrderedDict()
         # these are the gradient steps
         for step_id, samples_data in enumerate(all_samples_data):
-            dict_input_dict_step = self._extract_input_dict_new(
+            dict_input_dict_step = self._extract_input_dict(
                 samples_data, keys, prefix='step%i' % step_id)
             meta_op_input_dict.update(dict_input_dict_step)
 
