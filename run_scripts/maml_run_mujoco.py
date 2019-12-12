@@ -57,13 +57,13 @@ def main(config):
         rollouts_per_meta_task=config['rollouts_per_meta_task'],
         max_path_length=config['max_path_length'],
         # divide by number of envs
-        meta_batch_size=int(config['meta_batch_size']/len(envs)),
+        meta_batch_size=int(config['meta_batch_size']),
         max_obs_dim=max_obs_dim,
         task_action_dim=env.action_space.shape[0],
         parallel=config['parallel'],
     ) for env in envs]
     print("create sample processor")
-    sample_processor = MetaSampleProcessor(
+    sample_processor=MetaSampleProcessor(
         baseline=baseline,
         discount=config['discount'],
         gae_lambda=config['gae_lambda'],
@@ -71,7 +71,7 @@ def main(config):
     )
     print("create algorithms (thetas)")
 
-    algos = []
+    algos=[]
     for i in range(num_clusters_upper_lim):
         algos.append(TRPOMAML(
             policy=policies[i],
@@ -83,7 +83,7 @@ def main(config):
             exploration=False,
         ))
     print("define trainer")
-    trainer = KAML_Trainer(
+    trainer=KAML_Trainer(
         algos=algos,
         policies=policies,
         envs=envs,
@@ -99,24 +99,24 @@ def main(config):
 
 
 if __name__ == "__main__":
-    idx = int(time.time())
+    idx=int(time.time())
 
-    parser = argparse.ArgumentParser(
+    parser=argparse.ArgumentParser(
         description='ProMP: Proximal Meta-Policy Search')
     parser.add_argument('--config_file', type=str, default='',
                         help='json file with run specifications')
     parser.add_argument('--dump_path', type=str,
                         default=meta_policy_search_path + '/data/pro-mp/run_%d' % idx)
 
-    args = parser.parse_args()
+    args=parser.parse_args()
 
     if args.config_file:  # load configuration from json file
         with open(args.config_file, 'r') as f:
-            config = json.load(f)
+            config=json.load(f)
 
     else:  # use default config
 
-        config = {
+        config={
             'seed': 1,
 
             'baseline': 'LinearFeatureBaseline',
