@@ -385,11 +385,14 @@ class KAML_Trainer(object):
                             loss_list = algo._adapt(samples_data)
                             inner_loop_losses.append(loss_list)
 
-                        indices = np.argmin(inner_loop_losses, axis=0)
-                        pred_indices = np.array(indices)
-
-                        print("Clustering Score = {}".format(
-                            np.mean(np.abs(true_indices - pred_indices))))
+                        if step == self.num_inner_grad_steps:
+                            indices = np.argmin(inner_loop_losses, axis=0)
+                            pred_indices = np.array(indices)
+                            print("Clustering Score = {}".format(
+                                np.mean(np.abs(true_indices - pred_indices))))
+                            clustering_score = np.abs(
+                                np.mean(np.abs(true_indices - pred_indices)) - 0.5) * 2.0
+                            logger.logkv('Clustering Score', clustering_score)
 
 #                     algo_batches = [[] for _ in range(self.theta_count)]
 #                     for i in range(len(samples_data)):
