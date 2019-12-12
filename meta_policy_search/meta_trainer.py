@@ -431,7 +431,7 @@ class KAML_Trainer(object):
         """
         Gets the current policy and env for storage
         """
-        return dict(itr=itr, policy=self.policy, env=self.envs, baseline=self.baseline)
+        return dict(itr=itr, policies=self.policies, env=self.envs, baseline=self.baseline)
 
     def log_diagnostics(self, paths, prefix):
         # TODO: we aren't using it so far
