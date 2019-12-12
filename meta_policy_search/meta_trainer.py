@@ -336,7 +336,7 @@ class KAML_Trainer(object):
                         true_indices = []
                         paths = OrderedDict()
                         # len(self.envs) == len(initial_paths)
-                        for i in range(len(initial_paths[0]) * len(self.envs)):#, Paths in enumerate(zip(*initial_paths)):
+                        for i in range(len(initial_paths[0])):#, Paths in enumerate(zip(*initial_paths)):
                             index = np.random.choice(list(range(len(initial_paths))), p = self.probs)
                             paths[i] = initial_paths[index][i]
                             true_indices.append(index)
