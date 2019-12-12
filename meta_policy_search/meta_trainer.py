@@ -248,11 +248,11 @@ class KAML_Test_Trainer(object):
             sample_processor,
             policies,
             n_itr,
+            probs,
             start_itr=0,
             num_inner_grad_steps=1,
             sess=None,
             theta_count=2,
-            probs=[0.5, 0.5]
     ):
         print("initialize KAML trainer")
         self.algos = algos
@@ -267,6 +267,7 @@ class KAML_Test_Trainer(object):
         self.start_itr = start_itr
         self.num_inner_grad_steps = num_inner_grad_steps
         self.probs = probs
+        self.saver = tf.train.Saver() 
 
         assert len(samplers) == len(
             probs), "len(samplers) = {} != {} = len(probs)".format(len(samplers), len(probs))
@@ -340,8 +341,6 @@ class KAML_Test_Trainer(object):
 
                         true_indices = []
                         paths = OrderedDict()
-                        # len(self.envs) == len(initial_paths)
-                        # , Paths in enumerate(zip(*initial_paths)):
                         for i in range(len(initial_paths[0])):
                             index = np.random.choice(
                                 list(range(len(initial_paths))), p=self.probs)
@@ -363,10 +362,6 @@ class KAML_Test_Trainer(object):
                             paths, log='all', log_prefix='Step_%d-' % step)
                         # (number of inner updates, meta_batch_size)
                         all_samples_data.append(samples_data)
-
-                        # DEBUG
-                        # print("length of all_samples_data should be 40: {}".format(len(all_samples_data)))
-                        # print("all_samples_data[0] shape: {}".format(all_samples_data[0].shape))
 
                         list_proc_samples_time.append(
                             time.time() - time_proc_samples_start)
@@ -391,13 +386,6 @@ class KAML_Test_Trainer(object):
                             clustering_score = np.abs(
                                 np.mean(np.abs(true_indices - pred_indices)) - 0.5) * 2.0
                             logger.logkv('Clustering Score', clustering_score)
-
-#                     algo_batches = [[] for _ in range(self.theta_count)]
-#                     for i in range(len(samples_data)):
-#                         index = indices[i]
-#                         algo_batches[index].append((i, samples_data[i]))
-
-#                     algo_all_samples.append(algo_batches)
 
                         list_inner_step_time.append(
                             time.time() - time_inner_step_start)
@@ -432,6 +420,9 @@ class KAML_Test_Trainer(object):
 
                 logger.log("Saving snapshot...")
                 params = self.get_itr_snapshot(itr)
+                if itr % 25 == 0:
+                    print("Saving model...")
+                    self.saver.save(sess, './ant_2_{}'.format(itr))
                 logger.save_itr_params(itr, params)
                 logger.log("Saved")
 
@@ -493,7 +484,7 @@ class KAML_Trainer(object):
             num_inner_grad_steps=1,
             sess=None,
             theta_count=2,
-            probs=[0.5, 0.5]
+            probs = [0.5, 0.5]
     ):
         print("initialize KAML trainer")
         self.algos = algos

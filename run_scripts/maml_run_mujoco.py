@@ -87,10 +87,10 @@ def main(config):
         algos=algos,
         policies=policies,
         envs=envs,
-        # env_ids=config['env'],
         samplers=samplers,
         sample_processor=sample_processor,
         n_itr=config['n_itr'],
+        probs=[1.0],
         num_inner_grad_steps=config['num_inner_grad_steps'],
         theta_count=num_clusters_upper_lim
     )
@@ -121,7 +121,7 @@ if __name__ == "__main__":
 
             'baseline': 'LinearFeatureBaseline',
 
-            'env': ['HalfCheetahRandDirecEnv', 'AntRandDirecEnv'],
+            'env': ['AntRandDirecEnv'],
 
             # sampler config
             'rollouts_per_meta_task': 20,
