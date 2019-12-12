@@ -236,8 +236,8 @@ class MAMLAlgo(MetaAlgo):
             samples (list) : list of dicts of samples (each is a dict) split by meta task
 
         """
-        print("len(samples) = {}, self.meta_batch_size = {}".format(len(samples), self.meta_batch_size))
-        assert len(samples) == self.meta_batch_size
+        # print("len(samples) = {}, self.meta_batch_size = {}".format(len(samples), self.meta_batch_size))
+        # assert len(samples) == self.meta_batch_size
         assert [sample_dict.keys() for sample_dict in samples]
         sess = tf.get_default_session()
 
