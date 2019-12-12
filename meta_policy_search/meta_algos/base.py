@@ -280,6 +280,7 @@ class MAMLAlgo(MetaAlgo):
         """
         size = size if size else self.meta_batch_size
         input_dict = OrderedDict()
+        print("SIZE %d", size)
         for meta_task in range(size):
             extracted_data = utils.extract(
                 samples_data_meta_batch[meta_task], *keys
