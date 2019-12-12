@@ -6,12 +6,15 @@ import numpy as np
 
 from collections import OrderedDict
 
+
 class Timer():
     """Timer Class."""
+
     def __init__(self):
         """Initialize timer and lap counter."""
         self.time = time.time()
         self.counter = 0
+
     def time_elapsed(self):
         """
         Return time elapsed since last interaction with the timer
@@ -22,6 +25,7 @@ class Timer():
         print(self.counter, delta_t)
         self.time = time.time()
         return delta_t
+
     def start(self):
         """Restart timer"""
         self.time = time.time()
@@ -248,7 +252,7 @@ class KAML_Trainer(object):
             num_inner_grad_steps=1,
             sess=None,
             theta_count=2,
-            probs = [0.5, 0.5]
+            probs=[0.5, 0.5]
     ):
         print("initialize KAML trainer")
         self.algos = algos
@@ -264,7 +268,8 @@ class KAML_Trainer(object):
         self.num_inner_grad_steps = num_inner_grad_steps
         self.probs = probs
 
-        assert len(samplers) == len(probs), "len(samplers) = {} != {} = len(probs)".format(len(samplers), len(probs))
+        assert len(samplers) == len(
+            probs), "len(samplers) = {} != {} = len(probs)".format(len(samplers), len(probs))
 
         if sess is None:
             sess = tf.Session()
@@ -336,14 +341,19 @@ class KAML_Trainer(object):
                         true_indices = []
                         paths = OrderedDict()
                         # len(self.envs) == len(initial_paths)
-                        for i in range(len(initial_paths[0])):#, Paths in enumerate(zip(*initial_paths)):
-                            index = np.random.choice(list(range(len(initial_paths))), p = self.probs)
+                        # , Paths in enumerate(zip(*initial_paths)):
+                        for i in range(len(initial_paths[0])):
+                            index = np.random.choice(
+                                list(range(len(initial_paths))), p=self.probs)
                             paths[i] = initial_paths[index][i]
                             true_indices.append(index)
 
-                        true_indices = np.array(true_indices) # list of 0's and 1's indicating which env
-                        list_sampling_time.append(time.time() - time_env_sampling_start)
-                        all_paths.append(paths) # (number of inner updates, meta_batch_size)
+                        # list of 0's and 1's indicating which env
+                        true_indices = np.array(true_indices)
+                        list_sampling_time.append(
+                            time.time() - time_env_sampling_start)
+                        # (number of inner updates, meta_batch_size)
+                        all_paths.append(paths)
 
                         """ ----------------- Processing Samples ---------------------"""
 
@@ -351,7 +361,8 @@ class KAML_Trainer(object):
                         time_proc_samples_start = time.time()
                         samples_data = self.sample_processor.process_samples(
                             paths, log='all', log_prefix='Step_%d-' % step)
-                        all_samples_data.append(samples_data) # (number of inner updates, meta_batch_size)
+                        # (number of inner updates, meta_batch_size)
+                        all_samples_data.append(samples_data)
 
                         # DEBUG
                         # print("length of all_samples_data should be 40: {}".format(len(all_samples_data)))
@@ -367,7 +378,7 @@ class KAML_Trainer(object):
                         if step < self.num_inner_grad_steps:
                             inner_loop_losses = []
 
-                    #for algo in self.algos[:self.theta_count]: already looping over algos now so we don't need this
+                    # for algo in self.algos[:self.theta_count]: already looping over algos now so we don't need this
                         time_inner_step_start = time.time()
                         if step < self.num_inner_grad_steps:
                             logger.log("Computing inner policy updates...")
@@ -377,7 +388,8 @@ class KAML_Trainer(object):
                         indices = np.argmin(inner_loop_losses, axis=0)
                         pred_indices = np.array(indices)
 
-                        print("Clustering Score = {}".format(np.mean(np.abs(true_indices - pred_indices))))
+                        print("Clustering Score = {}".format(
+                            np.mean(np.abs(true_indices - pred_indices))))
 
 #                     algo_batches = [[] for _ in range(self.theta_count)]
 #                     for i in range(len(samples_data)):
@@ -396,7 +408,7 @@ class KAML_Trainer(object):
                     logger.log("Optimizing policy...")
                     # This needs to take all samples_data so that it can construct graph for meta-optimization.
                     time_outer_step_start = time.time()
-                    #all_samples_index_data = [algo_batches[index]
+                    # all_samples_index_data = [algo_batches[index]
                     #                          for algo_batches in algo_all_samples]
                     algo.optimize_policy(all_samples_data)
 
@@ -436,5 +448,5 @@ class KAML_Trainer(object):
     def log_diagnostics(self, paths, prefix):
         # TODO: we aren't using it so far
         #self.envs.log_diagnostics(paths, prefix)
-        self.policy.log_diagnostics(paths, prefix)
+        # self.poli.log_diagnostics(paths, prefix)
         self.baseline.log_diagnostics(paths, prefix)
