@@ -268,6 +268,7 @@ class KAML_Test_Trainer(object):
         self.num_inner_grad_steps = num_inner_grad_steps
         self.probs = probs
         self.saver = tf.train.Saver()
+        self.num_envs = len(envs)
 
         assert len(samplers) == len(
             probs), "len(samplers) = {} != {} = len(probs)".format(len(samplers), len(probs))
@@ -318,15 +319,23 @@ class KAML_Test_Trainer(object):
                 for sampler in self.samplers:
                     sampler.update_tasks()
 
-                all_inner_loop_losses = []
-                all_samples_data = []
-                all_true_indices = [] 
+                # all_inner_loop_losses = []
+                # all_samples_data = []
 
+                # shape : num_algos, num_inner_steps, num_tasks, ..
+                all_algo_all_samples_data = [[] for _ in range(self.theta_count)] 
+                # shape : num_algos, num_tasks
+                all_algo_inner_loop_losses = [] 
+
+                true_indices = []
+                for task_ind in range(self.meta_batch_size):
+                    index = np.random.choice(list(range(self.num_envs)), p=self.probs)
+                    true_indices.append(index)
+                
                 # For each theta in thetas, we obtain trajectories from the same tasks from both environments
                 for algo in self.algos[:self.theta_count]:
-                    
-                    algo_inner_loop_losses = []
-                    algo_samples_data = [] 
+                    # algo_inner_loop_losses = []
+                    # algo_all_samples_data = [] 
                     
                     policy = algo.policy
                     policy.switch_to_pre_update()  # Switch to pre-update policy
@@ -334,6 +343,8 @@ class KAML_Test_Trainer(object):
                     # all_samples_data, all_paths, algo_all_samples = [], [], []
                     list_sampling_time, list_inner_step_time, list_outer_step_time, list_proc_samples_time = [], [], [], []
                     start_total_inner_time = time.time()
+                    algo_inner_loop_losses = []
+
                     for step in range(self.num_inner_grad_steps+1):
                         logger.log('** Step ' + str(step) + ' **')
 
@@ -347,23 +358,12 @@ class KAML_Test_Trainer(object):
                             policy=policy, log=True, log_prefix='Step_%d-' % step) for sampler in self.samplers]
  
                         # get paths no matter step == 0 or 1 
-                        true_indices = []
                         paths = OrderedDict()
-                        for i in range(len(initial_paths[0])):
-                            index = np.random.choice(
-                                list(range(len(initial_paths))), p=self.probs)
-                            paths[i] = initial_paths[index][i]
-                            true_indices.append(index)
-                                
-                        if step == self.num_inner_grad_steps: # if last iteration 
-                            all_true_indices.append(true_indices)
-                            # why do we have to do the thing where we append when the itr is some number? 
+                        for task_ind in range(self.meta_batch_size):
+                            index = true_indices[task_ind]
+                            paths[task_ind] = initial_paths[index][task_ind]
 
-                            # list of 0's and 1's indicating which env
-                            true_indices = np.array(true_indices)
-                        list_sampling_time.append(
-                            time.time() - time_env_sampling_start)
-                        # (number of inner updates, meta_batch_size)
+                        list_sampling_time.append(time.time() - time_env_sampling_start)
 
                         """ ----------------- Processing Samples ---------------------"""
 
@@ -373,7 +373,8 @@ class KAML_Test_Trainer(object):
                             paths, log='all', log_prefix='Step_%d-' % step)
                         # (number of inner updates, meta_batch_size)
 
-                        algo_samples_data.append(samples_data)
+
+                        all_algo_all_samples_data[algo].append(samples_data)
 
                         list_proc_samples_time.append(
                             time.time() - time_proc_samples_start)
@@ -384,19 +385,17 @@ class KAML_Test_Trainer(object):
                         """ ------------------- Inner Policy Update --------------------"""
                         if step == self.num_inner_grad_steps:
                             # In the last inner_grad_step, append inner loop losses of this algo to inner_loop_losses
-                            all_inner_loop_losses.append(algo_inner_loop_losses)
+                            all_algo_inner_loop_losses.append(algo_inner_loop_losses)
 
                         time_inner_step_start = time.time()
                         if step < self.num_inner_grad_steps:
                             logger.log("Computing inner policy updates...")
-                            algo_loss_list = algo._adapt(samples_data)
-                            algo_inner_loop_losses.append(algo_loss_list)
+                            algo_inner_loop_losses = algo._adapt(samples_data)
 
                         list_inner_step_time.append(
                             time.time() - time_inner_step_start)
                     total_inner_time = time.time() - start_total_inner_time
         
-                    all_samples_data.append(algo_samples_data)
 
                 time_maml_opt_start = time.time()
                 """ ------------------ Outer Policy Update ---------------------"""
@@ -404,17 +403,53 @@ class KAML_Test_Trainer(object):
                 logger.log("Optimizing policy...")
 
                 time_outer_step_start = time.time()
+
+                # true_indices: len(num_tasks)
+                # all_algo_all_samples_data: num_algos, num_inner_steps, num_tasks, ..
+                # all_algo_inner_loop_losses : num_algos, num_tasks
+
+                # algo.optimize_policy(data) -> data shape: num_inner_steps, k (< num_tasks), ...
                 
                 # inner_loop_losses[i][j] = loss for task j for algo i 
-                all_inner_loop_losses = np.array(all_inner_loop_losses)
+                all_algo_all_samples_data = np.array(all_algo_all_samples_data)
+                all_algo_inner_loop_losses = np.array(all_algo_inner_loop_losses)
+                true_indices = np.array(true_indices)
+
+                print("all_algo_all_samples_data shape", all_algo_all_samples_data.shape)
+                print("all_algo_inner_loop_losses shape", all_algo_inner_loop_losses.shape)
+                print("true_indices shape", true_indices.shape)
+
+               
+                which_algo = np.argmin(all_algo_inner_loop_losses, axis=0) # length num_tasks 
+                print("which_algo shape: ", which_algo.shape)
                 
+                # For each algo, do outer update 
+
+                for a_ind, algo in enumerate(self.algos[:self.theta_count]): 
+                    # Get all indices of data from tasks that were assigned to this algo 
+                    relevant_data_indices = (which_algo == a_ind) # this has shape (1, 40)
+                    print("relevant_data_indices", relevant_data_indices.shape) # (1, 2, 40) 
+                    relevant_data_indices = np.nonzero(relevant_data_indices)[0]
+                    print("relevant_data_indices", relevant_data_indices.shape) # (1, 2, 40) 
+                    x = np.squeeze(all_algo_all_samples_data[a_ind, :, relevant_data_indices], axis=0)
+                    print("optimize policy input", x.shape)
+                    algo.optimize_policy(x)
+
+
+
+                    # print("relevant_data_indices", relevant_data_indices.shape) # (80, 3) 
+                    # print("np.squeeze(all_samples_data[a_ind, :, relevant_data_indices]): ", np.squeeze(all_samples_data[a_ind, :, relevant_data_indices]).shape) 
+                    # algo.optimize_policy(np.squeeze(all_samples_data[a_ind, :, relevant_data_indices])) # batch size (?) by trajectory length 
+
+
+
+
                 # all_samples_data[i][j][k] = kth obs for task j for algo i 
-                all_samples_data = np.array(all_samples_data)
-                print(all_samples_data.shape) # (1, 2, 40) 
+                # all_samples_data = np.array(all_samples_data)
+                # print(all_samples_data.shape) # (1, 2, 40) 
                 
                 
-                all_true_indices = np.array(all_true_indices) 
-                print(all_true_indices.shape) # num_algos x meta_batch_size (1, 40) 
+                # print(all_true_indices.shape) # num_algos x meta_batch_size (1, 40) 
                 
                 #all_pred_indices = np.argmin 
                 
@@ -427,18 +462,7 @@ class KAML_Test_Trainer(object):
 #                             logger.logkv('Clustering Score', clustering_score)
                 
                 # Get appropriate algo for each task 
-                which_algo = np.argmin(all_inner_loop_losses, axis=0) # length meta_batch_size 
-                print("which_algo shape: ", which_algo.shape)
-                
-                # For each algo, do outer update 
-                for a_ind, algo in enumerate(self.algos[:self.theta_count]): 
-                    # Get all indices of data from tasks that were assigned to this algo 
-                    relevant_data_indices = (which_algo == a_ind) # this has shape (1, 40)
-                    print("relevant_data_indices", relevant_data_indices.shape) # (1, 2, 40) 
-                    relevant_data_indices = np.argwhere(relevant_data_indices)
-                    print("relevant_data_indices", relevant_data_indices.shape) # (80, 3) 
-                    print("np.squeeze(all_samples_data[a_ind, :, relevant_data_indices]): ", np.squeeze(all_samples_data[a_ind, :, relevant_data_indices]).shape) 
-                    algo.optimize_policy(np.squeeze(all_samples_data[a_ind, :, relevant_data_indices])) # batch size (?) by trajectory length 
+
 
                 """ ------------------- Logging Stuff --------------------------"""
                 logger.logkv('Itr', itr)
