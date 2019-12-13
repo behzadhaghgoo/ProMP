@@ -457,7 +457,7 @@ class KAML_Test_Trainer(object):
                     new_x = np.concatenate([x, x[sample_indices]], axis=0)
                     np.random.shuffle(new_x)
 
-                    print("optimize policy input", x.shape)
+                    print("optimize policy input", new_x.shape)
                     algo.optimize_policy(new_x.T)
 
                 clustering_score = np.abs(

@@ -37,12 +37,12 @@ def main(config):
     num_clusters_upper_lim = len(envs)
 
     policies = [MetaGaussianMLPPolicy(
-        name="meta-policy-{}".format(_),
+        name="meta-policy-{}".format(i),
         obs_dim=max_obs_dim,
         action_dim=max_action_dim,
         meta_batch_size=config['meta_batch_size'],
         hidden_sizes=config['hidden_sizes'],
-    ) for _ in range(num_clusters_upper_lim)]
+    ) for i in range(num_clusters_upper_lim)]
 
     print("create a sampler for each env")
 
