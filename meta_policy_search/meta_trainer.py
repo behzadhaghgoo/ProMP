@@ -387,13 +387,13 @@ class KAML_Test_Trainer(object):
                         if step == self.num_inner_grad_steps:
                             # In the last inner_grad_step, append inner loop losses of this algo to inner_loop_losses
                             all_algo_inner_loop_losses.append(algo_inner_loop_losses)
-                            print("adding to all_algo_inner_loop_losses")
-                            print("something of shape: {}".format(algo_inner_loop_losses))
+                            #print("adding to all_algo_inner_loop_losses")
+                            #print("something of shape: {}".format(algo_inner_loop_losses.shape))
 
                         time_inner_step_start = time.time()
                         if step < self.num_inner_grad_steps:
                             logger.log("Computing inner policy updates...")
-                            algo_inner_loop_losses = algo._adapt(samples_data)
+                            algo_inner_loop_losses, _ = algo._adapt(samples_data)
 
                         list_inner_step_time.append(
                             time.time() - time_inner_step_start)
@@ -419,7 +419,7 @@ class KAML_Test_Trainer(object):
                 true_indices = np.array(true_indices)
 
                 print("all_algo_all_samples_data shape", all_algo_all_samples_data.shape)
-                print("all_algo_inner_loop_losses shape", all_algo_inner_loop_losses.shape)
+                print("all_algo_inner_loop_losses shape", all_algo_inner_loop_losses.shape) # (1, 2, 40)
                 print("true_indices shape", true_indices.shape)
 
                
@@ -430,13 +430,13 @@ class KAML_Test_Trainer(object):
 
                 for a_ind, algo in enumerate(self.algos[:self.theta_count]): 
                     # Get all indices of data from tasks that were assigned to this algo 
-                    relevant_data_indices = (which_algo == a_ind) # this has shape (1, 40)
-                    print("relevant_data_indices", relevant_data_indices.shape) # (1, 2, 40) 
+                    relevant_data_indices = (which_algo == a_ind) 
+                    print("relevant_data_indices", relevant_data_indices.shape) 
                     relevant_data_indices = np.nonzero(relevant_data_indices)[0]
-                    print("relevant_data_indices", relevant_data_indices.shape) # (1, 2, 40) 
+                    print("relevant_data_indices", relevant_data_indices.shape) 
                     print("all_algo_all_samples_data[a_ind, :, relevant_data_indices]")
-                    print(all_algo_all_samples_data[a_ind, :, relevant_data_indices])
-                    x = all_algo_all_samples_data[a_ind, :, relevant_data_indices]
+                    print(all_algo_all_samples_data[a_ind, :, list(relevant_data_indices)].shape)
+                    x = all_algo_all_samples_data[a_ind, :, list(relevant_data_indices)]
                     print("optimize policy input", x.shape)
                     algo.optimize_policy(x)
                 
