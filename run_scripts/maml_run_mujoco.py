@@ -37,7 +37,7 @@ def main(config):
     num_clusters_upper_lim = len(envs)
 
     policies = [MetaGaussianMLPPolicy(
-        name="meta-policy",
+        name="meta-policy-{}".format(_),
         obs_dim=max_obs_dim,
         action_dim=max_action_dim,
         meta_batch_size=config['meta_batch_size'],
