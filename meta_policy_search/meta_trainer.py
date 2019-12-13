@@ -435,10 +435,11 @@ class KAML_Test_Trainer(object):
                     relevant_data_indices = np.nonzero(relevant_data_indices)[0]
                     print("relevant_data_indices", relevant_data_indices.shape) 
                     print("all_algo_all_samples_data[a_ind, :, relevant_data_indices]")
+                    print(list(relevant_data_indices))
                     print(all_algo_all_samples_data[a_ind, :, list(relevant_data_indices)].shape)
                     x = all_algo_all_samples_data[a_ind, :, list(relevant_data_indices)]
                     print("optimize policy input", x.shape)
-                    algo.optimize_policy(x)
+                    algo.optimize_policy(x.T)
                 
                 clustering_score = np.abs(np.mean(np.abs(true_indices - which_algo)) - 0.5) * 2.0
                 logger.logkv('Clustering Score', clustering_score)

@@ -116,8 +116,8 @@ if __name__ == "__main__":
 
             'baseline': 'LinearFeatureBaseline',
 
-            'env': ['AntRandDirecEnv'],
-            'probs': [1.0],
+            'env': ['AntRandDirecEnv', 'HalfCheetahRandDirecEnv'],
+            'probs': [0.5, 0.5],
 
             # sampler config
             'rollouts_per_meta_task': 20,
