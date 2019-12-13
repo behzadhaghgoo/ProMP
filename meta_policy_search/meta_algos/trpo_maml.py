@@ -86,7 +86,7 @@ class TRPOMAML(MAMLAlgo):
 
             """ ----- Build graph for the meta-update ----- """
             self.meta_op_phs_dict = OrderedDict()
-            obs_phs, action_phs, adv_phs, dist_info_old_phs, all_phs_dict = self._make_input_placeholders(
+            obs_phs, action_phs, adv_phs, dist_info_old_phs, all_phs_dict, _ = self._make_input_placeholders(
                 'step0')
             self.meta_op_phs_dict.update(all_phs_dict)
 
