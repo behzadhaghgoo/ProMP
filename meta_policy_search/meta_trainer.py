@@ -542,7 +542,6 @@ class KAML_Trainer(object):
             all_samples_data, all_paths, algo_all_samples = [], [], []
             list_sampling_time, list_inner_step_time, list_outer_step_time, list_proc_samples_time = [], [], [], []
             start_total_inner_time = time.time()
-            inner_loop_losses = []
             INITIAL_STEPS = 9
             for step in range(INITIAL_STEPS + 1):
                 initial_paths = [sampler.obtain_samples(
@@ -578,8 +577,8 @@ class KAML_Trainer(object):
                     if step < INITIAL_STEPS:
                         inner_loop_losses = []
                         logger.log("Computing inner policy updates...")
-                        loss_list, phis = self.algos[0]._adapt(samples_data, 1)
-                        inner_loop_losses.append(loss_list)
+                        phis = self.algos[0]._adapt(samples_data, 1)
+                        # inner_loop_losses.append(loss_list)
 
                 """ ------------------ Outer Policy Update ---------------------"""
 

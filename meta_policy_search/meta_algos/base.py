@@ -250,9 +250,7 @@ class MAMLAlgo(MetaAlgo):
             samples, self._optimization_keys, prefix='adapt', size=size)
         if size == self.meta_batch_size:
             input_ph_dict = self.adapt_input_ph_dict
-            print("AAAAAA")
-        else:
-            print("BBBB")
+        elif size == 1:
             input_ph_dict = self.adapt_input_ph_dict_first
 
         feed_dict_inputs = utils.create_feed_dict(
@@ -261,16 +259,23 @@ class MAMLAlgo(MetaAlgo):
 
         # merge the two feed dicts
         feed_dict = {**feed_dict_inputs, **feed_dict_params}
-        adapted_policies_params_vals, loss_list = sess.run(
-            [self.adapted_policies_params, self.loss_list], feed_dict=feed_dict)
+        if size == self.meta_batch_size:
+            adapted_policies_params_vals, loss_list = sess.run(
+                [self.adapted_policies_params, self.loss_list], feed_dict=feed_dict)
+            self.policy.update_task_parameters(adapted_policies_params_vals)
+            return loss_list, adapted_policies_params_vals
+
+        elif size == 1:
+            adapted_policies_params_vals = sess.run(
+                self.adapted_policies_params, feed_dict=feed_dict)
+            return adapted_policies_params_vals
+
 #         assert feed_dict == feed_dict2, "feed_dict problem"
         # store the new parameter values in the policy
-        self.policy.update_task_parameters(adapted_policies_params_vals)
 
 #         meta_op_input_dict = self._extract_input_dict_meta_op([samples], self._optimization_keys)
 
 #         feed_dict = self.optimizer.create_feed_dict(meta_op_input_dict)
-        return loss_list, adapted_policies_params_vals
 
     def _extract_input_dict(self, samples_data_meta_batch, keys, prefix='', size=None):
         """
