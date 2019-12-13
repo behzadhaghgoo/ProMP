@@ -250,7 +250,9 @@ class MAMLAlgo(MetaAlgo):
             samples, self._optimization_keys, prefix='adapt', size=size)
         if size == self.meta_batch_size:
             input_ph_dict = self.adapt_input_ph_dict
+            print("AAAAAA")
         else:
+            print("BBBB")
             input_ph_dict = self.adapt_input_ph_dict_first
 
         feed_dict_inputs = utils.create_feed_dict(
