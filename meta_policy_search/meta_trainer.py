@@ -295,6 +295,7 @@ class KAML_Test_Trainer(object):
         """
 
         self.timer.start()
+        multi_maml = False
 
         with self.sess.as_default() as sess:
 
@@ -422,21 +423,23 @@ class KAML_Test_Trainer(object):
                 print("all_algo_inner_loop_losses shape", all_algo_inner_loop_losses.shape) # (1, 2, 40)
                 print("true_indices shape", true_indices.shape)
 
-               
-                which_algo = np.argmin(all_algo_inner_loop_losses, axis=0) # length num_tasks 
+                if multi_maml and itr < 200:
+                    which_algo = true_indices
+                else:
+                    which_algo = np.argmin(all_algo_inner_loop_losses, axis=0) # length num_tasks 
                 print("which_algo shape: ", which_algo.shape)
                 
                 # For each algo, do outer update 
 
                 for a_ind, algo in enumerate(self.algos[:self.theta_count]): 
                     # Get all indices of data from tasks that were assigned to this algo 
-                    relevant_data_indices = (which_algo == a_ind) 
-                    print("relevant_data_indices", relevant_data_indices.shape) 
+                    relevant_data_indices = (which_algo == a_ind)
+                    print("relevant_data_indices", relevant_data_indices.shape)  
                     relevant_data_indices = np.nonzero(relevant_data_indices)[0]
                     print("relevant_data_indices", relevant_data_indices.shape) 
                     print("all_algo_all_samples_data[a_ind, :, relevant_data_indices]")
-                    print(all_algo_all_samples_data[a_ind, :, list(relevant_data_indices)].shape)
-                    x = all_algo_all_samples_data[a_ind, :, list(relevant_data_indices)]
+                    print(all_algo_all_samples_data[a_ind, :, list(relevant_data_indices)])
+                    x = all_algo_all_samples_data[a_ind, :, relevant_data_indices]
                     print("optimize policy input", x.shape)
                     algo.optimize_policy(x)
                 
