@@ -291,7 +291,7 @@ class MAMLAlgo(MetaAlgo):
             OrderedDict containing the data from all_samples_data. The data keys follow the naming convention:
                 '<prefix>_task<task_number>_<key_name>'
         """
-        size = size if size else self.meta_batch_size
+        size = size if size else len(samples_data_meta_batch)
         input_dict = OrderedDict()
         for meta_task in range(size):
             extracted_data = utils.extract(
