@@ -122,7 +122,7 @@ class TRPOMAML(MAMLAlgo):
                 all_surr_objs.append(surr_objs)
 
                 # Create new placeholders for the next step
-                obs_phs, action_phs, adv_phs, dist_info_old_phs, all_phs_dict = self._make_input_placeholders(
+                obs_phs, action_phs, adv_phs, dist_info_old_phs, all_phs_dict, _ = self._make_input_placeholders(
                     'step%i' % step_id)
                 self.meta_op_phs_dict.update(all_phs_dict)
 
