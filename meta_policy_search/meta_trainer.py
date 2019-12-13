@@ -269,6 +269,7 @@ class KAML_Test_Trainer(object):
         self.probs = probs
         self.saver = tf.train.Saver()
         self.num_envs = len(envs)
+        self.meta_batch_size = self.samplers[0].meta_batch_size
 
         assert len(samplers) == len(
             probs), "len(samplers) = {} != {} = len(probs)".format(len(samplers), len(probs))
@@ -333,7 +334,7 @@ class KAML_Test_Trainer(object):
                     true_indices.append(index)
                 
                 # For each theta in thetas, we obtain trajectories from the same tasks from both environments
-                for algo in self.algos[:self.theta_count]:
+                for a_ind, algo in enumerate(self.algos[:self.theta_count]):
                     # algo_inner_loop_losses = []
                     # algo_all_samples_data = [] 
                     
@@ -374,7 +375,7 @@ class KAML_Test_Trainer(object):
                         # (number of inner updates, meta_batch_size)
 
 
-                        all_algo_all_samples_data[algo].append(samples_data)
+                        all_algo_all_samples_data[a_ind].append(samples_data)
 
                         list_proc_samples_time.append(
                             time.time() - time_proc_samples_start)
@@ -386,6 +387,8 @@ class KAML_Test_Trainer(object):
                         if step == self.num_inner_grad_steps:
                             # In the last inner_grad_step, append inner loop losses of this algo to inner_loop_losses
                             all_algo_inner_loop_losses.append(algo_inner_loop_losses)
+                            print("adding to all_algo_inner_loop_losses")
+                            print("something of shape: {}".format(algo_inner_loop_losses))
 
                         time_inner_step_start = time.time()
                         if step < self.num_inner_grad_steps:
@@ -431,37 +434,14 @@ class KAML_Test_Trainer(object):
                     print("relevant_data_indices", relevant_data_indices.shape) # (1, 2, 40) 
                     relevant_data_indices = np.nonzero(relevant_data_indices)[0]
                     print("relevant_data_indices", relevant_data_indices.shape) # (1, 2, 40) 
-                    x = np.squeeze(all_algo_all_samples_data[a_ind, :, relevant_data_indices], axis=0)
+                    print("all_algo_all_samples_data[a_ind, :, relevant_data_indices]")
+                    print(all_algo_all_samples_data[a_ind, :, relevant_data_indices])
+                    x = all_algo_all_samples_data[a_ind, :, relevant_data_indices]
                     print("optimize policy input", x.shape)
                     algo.optimize_policy(x)
-
-
-
-                    # print("relevant_data_indices", relevant_data_indices.shape) # (80, 3) 
-                    # print("np.squeeze(all_samples_data[a_ind, :, relevant_data_indices]): ", np.squeeze(all_samples_data[a_ind, :, relevant_data_indices]).shape) 
-                    # algo.optimize_policy(np.squeeze(all_samples_data[a_ind, :, relevant_data_indices])) # batch size (?) by trajectory length 
-
-
-
-
-                # all_samples_data[i][j][k] = kth obs for task j for algo i 
-                # all_samples_data = np.array(all_samples_data)
-                # print(all_samples_data.shape) # (1, 2, 40) 
                 
-                
-                # print(all_true_indices.shape) # num_algos x meta_batch_size (1, 40) 
-                
-                #all_pred_indices = np.argmin 
-                
-                
-                #                         if step == self.num_inner_grad_steps:
-#                             indices = np.argmin(algo_inner_loop_losses, axis=0)
-#                             pred_indices = np.array(indices)
-#                             clustering_score = np.abs(
-#                                 np.mean(np.abs(true_indices - pred_indices)) - 0.5) * 2.0
-#                             logger.logkv('Clustering Score', clustering_score)
-                
-                # Get appropriate algo for each task 
+                clustering_score = np.abs(np.mean(np.abs(true_indices - which_algo)) - 0.5) * 2.0
+                logger.logkv('Clustering Score', clustering_score)
 
 
                 """ ------------------- Logging Stuff --------------------------"""
