@@ -82,7 +82,7 @@ class TRPOMAML(MAMLAlgo):
 
             """ --- Build inner update graph for adapting the policy and sampling trajectories --- """
             # this graph is only used for adapting the policy and not computing the meta-updates
-            self.adapted_policies_params, self.adapt_input_ph_dict, self.loss_list = self._build_inner_adaption()
+            self.adapted_policies_params, self.adapt_input_ph_dict, self.loss_list, self.adapt_input_ph_dict_first = self._build_inner_adaption()
 
             """ ----- Build graph for the meta-update ----- """
             self.meta_op_phs_dict = OrderedDict()

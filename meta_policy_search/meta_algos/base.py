@@ -110,6 +110,7 @@ class MAMLAlgo(MetaAlgo):
         self.trainable_inner_step_size = trainable_inner_step_size
 
         self.adapt_input_ph_dict = None
+        self.adapt_input_ph_dict_first = None
         self.loss_list = None
         self.adapted_policies_params = None
         self.step_sizes = None
@@ -156,9 +157,11 @@ class MAMLAlgo(MetaAlgo):
                 all_phs_dict['%s_task%i_agent_infos/%s' %
                              (prefix, task_id, info_key)] = ph
                 dist_info_ph_dict[info_key] = ph
+            if task_id == 0:
+                first_phs_dict = dict(all_phs_dict)
             dist_info_phs.append(dist_info_ph_dict)
 
-        return obs_phs, action_phs, adv_phs, dist_info_phs, all_phs_dict
+        return obs_phs, action_phs, adv_phs, dist_info_phs, all_phs_dict, first_phs_dict
 
     def _adapt_objective_sym(self, action_sym, adv_sym, dist_info_old_sym, dist_info_new_sym):
         raise NotImplementedError
@@ -176,7 +179,7 @@ class MAMLAlgo(MetaAlgo):
             adapt_input_list_ph (list): list of placeholders
 
         """
-        obs_phs, action_phs, adv_phs, dist_info_old_phs, adapt_input_ph_dict = self._make_input_placeholders(
+        obs_phs, action_phs, adv_phs, dist_info_old_phs, adapt_input_ph_dict, first_input_ph_dict = self._make_input_placeholders(
             'adapt')
 
         adapted_policies_params = []
@@ -199,7 +202,7 @@ class MAMLAlgo(MetaAlgo):
                 adapted_policies_params.append(adapted_policy_param)
                 loss_list.append(surr_obj_adapt)
 
-        return adapted_policies_params, adapt_input_ph_dict, loss_list
+        return adapted_policies_params, adapt_input_ph_dict, loss_list, first_input_ph_dict
 
     def _adapt_sym(self, surr_obj, params_var):
         """
@@ -245,7 +248,10 @@ class MAMLAlgo(MetaAlgo):
         # prepare feed dict
         input_dict = self._extract_input_dict(
             samples, self._optimization_keys, prefix='adapt', size=size)
-        input_ph_dict = self.adapt_input_ph_dict
+        if size == self.meta_batch_size:
+            input_ph_dict = self.adapt_input_ph_dict
+        else:
+            input_ph_dict = self.adapt_input_ph_dict_first
 
         feed_dict_inputs = utils.create_feed_dict(
             placeholder_dict=input_ph_dict, value_dict=input_dict)
@@ -280,7 +286,6 @@ class MAMLAlgo(MetaAlgo):
         """
         size = size if size else self.meta_batch_size
         input_dict = OrderedDict()
-        print("SIZE %d", size)
         for meta_task in range(size):
             extracted_data = utils.extract(
                 samples_data_meta_batch[meta_task], *keys
