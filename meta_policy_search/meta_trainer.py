@@ -410,11 +410,11 @@ class KAML_Test_Trainer(object):
                 
                 # all_samples_data[i][j][k] = kth obs for task j for algo i 
                 all_samples_data = np.array(all_samples_data)
-                print(all_samples_data.shape)
+                print(all_samples_data.shape) # (1, 2, 40) 
                 
                 
                 all_true_indices = np.array(all_true_indices) 
-                print(all_true_indices.shape) # num_algos x meta_batch_size 
+                print(all_true_indices.shape) # num_algos x meta_batch_size (1, 40) 
                 
                 #all_pred_indices = np.argmin 
                 
@@ -428,15 +428,17 @@ class KAML_Test_Trainer(object):
                 
                 # Get appropriate algo for each task 
                 which_algo = np.argmin(all_inner_loop_losses, axis=0) # length meta_batch_size 
+                print("which_algo shape: ", which_algo.shape)
                 
                 # For each algo, do outer update 
                 for a_ind, algo in enumerate(self.algos[:self.theta_count]): 
                     # Get all indices of data from tasks that were assigned to this algo 
                     relevant_data_indices = (which_algo == a_ind) # this has shape (1, 40)
-                    print("relevant_data_indices", relevant_data_indices.shape)
+                    print("relevant_data_indices", relevant_data_indices.shape) # (1, 2, 40) 
                     relevant_data_indices = np.argwhere(relevant_data_indices)
-                    print("relevant_data_indices", relevant_data_indices.shape)
-                    algo.optimize_policy(all_samples_data[a_ind, :, relevant_data_indices]) # batch size (?) by trajectory length 
+                    print("relevant_data_indices", relevant_data_indices.shape) # (80, 3) 
+                    print("np.squeeze(all_samples_data[a_ind, :, relevant_data_indices]): ", np.squeeze(all_samples_data[a_ind, :, relevant_data_indices]).shape) 
+                    algo.optimize_policy(np.squeeze(all_samples_data[a_ind, :, relevant_data_indices])) # batch size (?) by trajectory length 
 
                 """ ------------------- Logging Stuff --------------------------"""
                 logger.logkv('Itr', itr)
