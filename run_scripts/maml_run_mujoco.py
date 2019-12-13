@@ -23,6 +23,7 @@ meta_policy_search_path = '/'.join(os.path.realpath(
 
 
 def main(config):
+    assert len(config['probs']) == len(config['env'])
     set_seed(config['seed'])
 
     baseline = globals()[config['baseline']]()  # instantiate baseline
@@ -33,15 +34,7 @@ def main(config):
     max_action_dim = np.max([env.action_space.shape[0] for env in envs])
     max_obs_dim = np.max([env.observation_space.shape[0] for env in envs])
 
-    num_clusters_upper_lim = 1
-
-    # policy = MetaGaussianMLPPolicy(
-    #     name="meta-policy",
-    #     obs_dim=max_obs_dim,
-    #     action_dim=max_action_dim,
-    #     meta_batch_size=config['meta_batch_size'],
-    #     hidden_sizes=config['hidden_sizes'],
-    # )
+    num_clusters_upper_lim = len(envs)
 
     policies = [MetaGaussianMLPPolicy(
         name="meta-policy",
@@ -50,18 +43,20 @@ def main(config):
         meta_batch_size=config['meta_batch_size'],
         hidden_sizes=config['hidden_sizes'],
     ) for _ in range(num_clusters_upper_lim)]
+
     print("create a sampler for each env")
+
     samplers = [MetaSampler(
         env=env,
         # This batch_size is confusing
         rollouts_per_meta_task=config['rollouts_per_meta_task'],
         max_path_length=config['max_path_length'],
-        # divide by number of envs
         meta_batch_size=int(config['meta_batch_size']),
         max_obs_dim=max_obs_dim,
         task_action_dim=env.action_space.shape[0],
         parallel=config['parallel'],
     ) for env in envs]
+
     print("create sample processor")
     sample_processor = MetaSampleProcessor(
         baseline=baseline,
@@ -90,7 +85,7 @@ def main(config):
         samplers=samplers,
         sample_processor=sample_processor,
         n_itr=config['n_itr'],
-        probs=[1.0],
+        probs=config['probs'],
         num_inner_grad_steps=config['num_inner_grad_steps'],
         theta_count=num_clusters_upper_lim
     )
@@ -122,6 +117,7 @@ if __name__ == "__main__":
             'baseline': 'LinearFeatureBaseline',
 
             'env': ['AntRandDirecEnv'],
+            'probs': [1.0],
 
             # sampler config
             'rollouts_per_meta_task': 20,
