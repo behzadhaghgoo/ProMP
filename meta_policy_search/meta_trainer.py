@@ -318,11 +318,16 @@ class KAML_Test_Trainer(object):
                 for sampler in self.samplers:
                     sampler.update_tasks()
 
-                inner_loop_losses = []
+                all_inner_loop_losses = []
                 all_samples_data = []
+                all_true_indices = [] 
 
                 # For each theta in thetas, we obtain trajectories from the same tasks from both environments
                 for algo in self.algos[:self.theta_count]:
+                    
+                    algo_inner_loop_losses = []
+                    algo_samples_data = [] 
+                    
                     policy = algo.policy
                     policy.switch_to_pre_update()  # Switch to pre-update policy
 
@@ -340,7 +345,8 @@ class KAML_Test_Trainer(object):
                         # Meta-sampler's obtain_samples function now takes as input policy since we need trajectories for each policy
                         initial_paths = [sampler.obtain_samples(
                             policy=policy, log=True, log_prefix='Step_%d-' % step) for sampler in self.samplers]
-
+ 
+                        # get paths no matter step == 0 or 1 
                         true_indices = []
                         paths = OrderedDict()
                         for i in range(len(initial_paths[0])):
@@ -348,9 +354,13 @@ class KAML_Test_Trainer(object):
                                 list(range(len(initial_paths))), p=self.probs)
                             paths[i] = initial_paths[index][i]
                             true_indices.append(index)
+                                
+                        if step == self.num_inner_grad_steps: # if last iteration 
+                            all_true_indices.append(true_indices)
+                            # why do we have to do the thing where we append when the itr is some number? 
 
-                        # list of 0's and 1's indicating which env
-                        true_indices = np.array(true_indices)
+                            # list of 0's and 1's indicating which env
+                            true_indices = np.array(true_indices)
                         list_sampling_time.append(
                             time.time() - time_env_sampling_start)
                         # (number of inner updates, meta_batch_size)
@@ -363,7 +373,7 @@ class KAML_Test_Trainer(object):
                             paths, log='all', log_prefix='Step_%d-' % step)
                         # (number of inner updates, meta_batch_size)
 
-                        # all_samples_data.append(samples_data)
+                        algo_samples_data.append(samples_data)
 
                         list_proc_samples_time.append(
                             time.time() - time_proc_samples_start)
@@ -372,36 +382,61 @@ class KAML_Test_Trainer(object):
                             sum(list(paths.values()), []), prefix='Step_%d-' % step)
 
                         """ ------------------- Inner Policy Update --------------------"""
-                        if step < self.num_inner_grad_steps:
-                            inner_loop_losses = []
+                        if step == self.num_inner_grad_steps:
+                            # In the last inner_grad_step, append inner loop losses of this algo to inner_loop_losses
+                            all_inner_loop_losses.append(algo_inner_loop_losses)
 
-                    # for algo in self.algos[:self.theta_count]: already looping over algos now so we don't need this
                         time_inner_step_start = time.time()
                         if step < self.num_inner_grad_steps:
                             logger.log("Computing inner policy updates...")
-                            loss_list = algo._adapt(samples_data)
-                            inner_loop_losses.append(loss_list)
-
-                        if step == self.num_inner_grad_steps:
-                            indices = np.argmin(inner_loop_losses, axis=0)
-                            pred_indices = np.array(indices)
-                            clustering_score = np.abs(
-                                np.mean(np.abs(true_indices - pred_indices)) - 0.5) * 2.0
-                            logger.logkv('Clustering Score', clustering_score)
+                            algo_loss_list = algo._adapt(samples_data)
+                            algo_inner_loop_losses.append(algo_loss_list)
 
                         list_inner_step_time.append(
                             time.time() - time_inner_step_start)
                     total_inner_time = time.time() - start_total_inner_time
+        
+                    all_samples_data.append(algo_samples_data)
 
-                    time_maml_opt_start = time.time()
-                    """ ------------------ Outer Policy Update ---------------------"""
+                time_maml_opt_start = time.time()
+                """ ------------------ Outer Policy Update ---------------------"""
 
-                    logger.log("Optimizing policy...")
-                    # This needs to take all samples_data so that it can construct graph for meta-optimization.
-                    time_outer_step_start = time.time()
-                    # all_samples_index_data = [algo_batches[index]
-                    #                          for algo_batches in algo_all_samples]
-                    algo.optimize_policy(all_samples_data)
+                logger.log("Optimizing policy...")
+
+                time_outer_step_start = time.time()
+                
+                # inner_loop_losses[i][j] = loss for task j for algo i 
+                all_inner_loop_losses = np.array(all_inner_loop_losses)
+                
+                # all_samples_data[i][j][k] = kth obs for task j for algo i 
+                all_samples_data = np.array(all_samples_data)
+                print(all_samples_data.shape)
+                
+                
+                all_true_indices = np.array(all_true_indices) 
+                print(all_true_indices.shape) # num_algos x meta_batch_size 
+                
+                #all_pred_indices = np.argmin 
+                
+                
+                #                         if step == self.num_inner_grad_steps:
+#                             indices = np.argmin(algo_inner_loop_losses, axis=0)
+#                             pred_indices = np.array(indices)
+#                             clustering_score = np.abs(
+#                                 np.mean(np.abs(true_indices - pred_indices)) - 0.5) * 2.0
+#                             logger.logkv('Clustering Score', clustering_score)
+                
+                # Get appropriate algo for each task 
+                which_algo = np.argmin(all_inner_loop_losses, axis=0) # length meta_batch_size 
+                
+                # For each algo, do outer update 
+                for a_ind, algo in enumerate(self.algos[:self.theta_count]): 
+                    # Get all indices of data from tasks that were assigned to this algo 
+                    relevant_data_indices = (which_algo == a_ind) # this has shape (1, 40)
+                    print("relevant_data_indices", relevant_data_indices.shape)
+                    relevant_data_indices = np.argwhere(relevant_data_indices)
+                    print("relevant_data_indices", relevant_data_indices.shape)
+                    algo.optimize_policy(all_samples_data[a_ind, :, relevant_data_indices]) # batch size (?) by trajectory length 
 
                 """ ------------------- Logging Stuff --------------------------"""
                 logger.logkv('Itr', itr)
