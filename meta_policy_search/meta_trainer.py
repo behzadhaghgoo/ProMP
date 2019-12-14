@@ -332,7 +332,7 @@ class KAML_Test_Trainer(object):
                     "Sampling set of tasks/goals for this meta-batch...")
 
                 # Update tasks if not in the initial phi phase.
-                if not phi_test or itr > switch_thresh:
+                if (not phi_test) or itr > switch_thresh:
                     for sampler in self.samplers:
                         sampler.update_tasks()
 

@@ -247,7 +247,7 @@ if __name__ == "__main__":
 
                 'multi_maml': True,
                 'phi_test': True,
-                'switch_thresh': 200,
+                'switch_thresh': 300,
                 'num_clusters_upper_lim': 2,
                 'mode_name': str(mode),
             }
@@ -255,7 +255,7 @@ if __name__ == "__main__":
             assert config['num_clusters_upper_lim'] == 2
             assert config['multi_maml'] == True
             assert config['phi_test'] == True
-            assert config['switch_thresh'] > 100
+            assert config['switch_thresh'] > 200
             
         # Basically MultiMAML
         elif mode == "KAML with late theta initialization":
