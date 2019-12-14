@@ -296,7 +296,11 @@ class KAML_Test_Trainer(object):
 
         self.timer.start()
         multi_maml = True
-
+        phi_test = True
+        
+        switch_thresh = 100
+        
+        
         with self.sess.as_default() as sess:
 
             # initialize uninitialized vars  (only initialize vars that were not loaded)
@@ -315,9 +319,10 @@ class KAML_Test_Trainer(object):
                 logger.log(
                     "Sampling set of tasks/goals for this meta-batch...")
 
-                # Here, we're sampling meta_batch_size / |envs| # of tasks for each environment
-                for sampler in self.samplers:
-                    sampler.update_tasks()
+                # Update tasks if not in the initial phi phase. 
+                if not phi_test or itr > switch_thresh:
+                    for sampler in self.samplers:
+                        sampler.update_tasks()
 
                 # all_inner_loop_losses = []
                 # all_samples_data = []
@@ -427,8 +432,10 @@ class KAML_Test_Trainer(object):
                       all_algo_inner_loop_losses.shape)  # (1, 2, 40)
                 print("true_indices shape", true_indices.shape)
 
-                if multi_maml and itr < 4000:
-                    which_algo = true_indices
+                
+                
+                if (multi_maml or phi_test) and itr < switch_thresh:
+                    which_algo = true_indices                    
                 else:
                     which_algo = np.argmin(
                         all_algo_inner_loop_losses, axis=0)  # length num_tasks
@@ -448,12 +455,17 @@ class KAML_Test_Trainer(object):
                     # print(list(relevant_data_indices))
                     # print(all_algo_all_samples_data[a_ind, :, list(relevant_data_indices)].shape)
                     
+                    
+                    
                     # Fill the batch to make the shape right. 
                     x = (all_algo_all_samples_data[a_ind, :, list(
                         relevant_data_indices)])  # 21 x 2
+                    if phi_test:
+                        x = x[0]
                     difference = self.meta_batch_size - x.shape[0]
                     sample_indices = np.random.choice(
                         x.shape[0], difference, replace=True)
+                    
                     new_x = np.concatenate([x, x[sample_indices]], axis=0)
                     np.random.shuffle(new_x)
 
