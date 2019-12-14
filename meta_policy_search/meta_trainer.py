@@ -296,7 +296,7 @@ class KAML_Test_Trainer(object):
 
         self.timer.start()
         multi_maml = True
-        phi_test = True
+        phi_test = False
         
         switch_thresh = 100
         
@@ -451,18 +451,16 @@ class KAML_Test_Trainer(object):
                     print("relevant_data_indices", relevant_data_indices.shape)
                     print(
                         "all_algo_all_samples_data[a_ind, :, relevant_data_indices]")
-                    # print(list(relevant_data_indices))
-                    # print(all_algo_all_samples_data[a_ind, :, list(relevant_data_indices)].shape)
-                    
-                    
                     
                     # Fill the batch to make the shape right. 
                     x = (all_algo_all_samples_data[a_ind, :, list(
                         relevant_data_indices)])  # 21 x 2
                     
-                    if phi_test:
+                    # if in the initial phase of phi_test, cut x to one example. 
+                    if phi_test and itr < switch_thresh:
+                        print("initial x.shape = {}".format(x.shape))
                         x = x[0:1,:]
-                        print("x.shape = {}".format(x.shape))
+                        print("converted to x.shape = {}".format(x.shape))
                     
                     difference = self.meta_batch_size - x.shape[0]
                     sample_indices = np.random.choice(
@@ -499,7 +497,7 @@ class KAML_Test_Trainer(object):
                 params = self.get_itr_snapshot(itr)
                 if itr % 25 == 0:
                     print("Saving model...")
-                    self.saver.save(sess, './dual_{}'.format(itr))
+                    self.saver.save(sess, './MultiMaml_{}_PhiTest_{}_Iteration_{}'.format(multi_maml, phi_test, itr))
                 logger.save_itr_params(itr, params)
                 logger.log("Saved")
 
