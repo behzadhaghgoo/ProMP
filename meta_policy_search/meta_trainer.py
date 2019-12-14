@@ -253,6 +253,9 @@ class KAML_Test_Trainer(object):
             num_inner_grad_steps=1,
             sess=None,
             theta_count=2,
+            multi_maml = False, 
+            phi_test = False, 
+            switch_thresh = False,
     ):
         print("initialize KAML test trainer")
         self.algos = algos
@@ -270,7 +273,11 @@ class KAML_Test_Trainer(object):
         self.saver = tf.train.Saver()
         self.num_envs = len(envs)
         self.meta_batch_size = self.samplers[0].meta_batch_size
-
+        
+        self.multi_maml = multi_maml
+        self.phi_test = phi_test
+        self.switch_thresh = switch_thresh
+        
         assert len(samplers) == len(
             probs), "len(samplers) = {} != {} = len(probs)".format(len(samplers), len(probs))
 
@@ -295,10 +302,14 @@ class KAML_Test_Trainer(object):
         """
 
         self.timer.start()
-        multi_maml = True
-        phi_test = False
         
-        switch_thresh = 100
+        multi_maml = self.multi_maml
+        phi_test = self.phi_test
+        switch_thresh = self.switch_thresh
+
+#         multi_maml = True
+#         phi_test = False
+#         switch_thresh = 1000
         
         with self.sess.as_default() as sess:
 
@@ -393,8 +404,6 @@ class KAML_Test_Trainer(object):
                             # In the last inner_grad_step, append inner loop losses of this algo to inner_loop_losses
                             all_algo_inner_loop_losses.append(
                                 algo_inner_loop_losses)
-                            #print("adding to all_algo_inner_loop_losses")
-                            #print("something of shape: {}".format(algo_inner_loop_losses.shape))
 
                         time_inner_step_start = time.time()
                         if step < self.num_inner_grad_steps:

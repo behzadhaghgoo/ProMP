@@ -34,7 +34,7 @@ def main(config):
     max_action_dim = np.max([env.action_space.shape[0] for env in envs])
     max_obs_dim = np.max([env.observation_space.shape[0] for env in envs])
 
-    num_clusters_upper_lim = len(envs)
+    num_clusters_upper_lim = config['num_clusters_upper_lim'] #len(envs)
 
     policies = [MetaGaussianMLPPolicy(
         name="meta-policy-{}".format(i),
@@ -87,7 +87,10 @@ def main(config):
         n_itr=config['n_itr'],
         probs=config['probs'],
         num_inner_grad_steps=config['num_inner_grad_steps'],
-        theta_count=num_clusters_upper_lim
+        theta_count=num_clusters_upper_lim,
+        multi_maml = config['multi_maml'],
+        phi_test = config['phi_test'],
+        switch_thresh = config['switch_thresh']
     )
     print("start training")
     trainer.train()
@@ -105,49 +108,175 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    modes = ["MAML on two envs", 
+                "MultiMAML", 
+                "KAML with no initialization", 
+                "KAML with phi initialization", 
+                "KAML with late theta initialization"]
+    mode = modes[0]
+    
     if args.config_file:  # load configuration from json file
         with open(args.config_file, 'r') as f:
             config = json.load(f)
 
     else:  # use default config
+        if mode == "MAML on two envs":
+            config = {
+                'seed': 1,
 
-        config = {
-            'seed': 1,
+                'baseline': 'LinearFeatureBaseline',
 
-            'baseline': 'LinearFeatureBaseline',
+                'env': ['AntRandDirecEnv', 'HalfCheetahRandDirecEnv'],
+                'probs': [0.5, 0.5],
 
-            'env': ['AntRandDirecEnv', 'HalfCheetahRandDirecEnv'],
-            'probs': [0.5, 0.5],
+                # sampler config
+                'rollouts_per_meta_task': 20,
+                'max_path_length': 100,
+                'parallel': True,
 
-            # sampler config
-            'rollouts_per_meta_task': 20,
-            'max_path_length': 100,
-            'parallel': True,
+                # sample processor config
+                'discount': 0.99,
+                'gae_lambda': 1,
+                'normalize_adv': True,
 
-            # sample processor config
-            'discount': 0.99,
-            'gae_lambda': 1,
-            'normalize_adv': True,
+                # policy config
+                'hidden_sizes': (64, 64),
+                'learn_std': True,  # whether to learn the standard deviation of the gaussian policy
 
-            # policy config
-            'hidden_sizes': (64, 64),
-            'learn_std': True,  # whether to learn the standard deviation of the gaussian policy
+                # E-MAML config
+                'inner_lr': 0.1,  # adaptation step size
+                'learning_rate': 1e-3,  # meta-policy gradient step size
+                'step_size': 0.01,  # size of the TRPO trust-region
+                'n_itr': 1001,  # number of overall training iterations
+                'meta_batch_size': 40,  # number of sampled meta-tasks per iterations
+                'num_inner_grad_steps': 1,  # number of inner / adaptation gradient steps
+                'inner_type': 'log_likelihood',  # type of inner loss function used
 
-            # E-MAML config
-            'inner_lr': 0.1,  # adaptation step size
-            'learning_rate': 1e-3,  # meta-policy gradient step size
-            'step_size': 0.01,  # size of the TRPO trust-region
-            'n_itr': 1001,  # number of overall training iterations
-            'meta_batch_size': 40,  # number of sampled meta-tasks per iterations
-            'num_inner_grad_steps': 1,  # number of inner / adaptation gradient steps
-            'inner_type': 'log_likelihood',  # type of inner loss function used
+                'multi_maml': False,
+                'phi_test': False,
+                'switch_thresh': 1000,
+                'num_clusters_upper_lim': 1,
 
-        }
+            }
+        elif mode == "KAML with no initialization":
+            config = {
+                'seed': 1,
+
+                'baseline': 'LinearFeatureBaseline',
+
+                'env': ['AntRandDirecEnv', 'HalfCheetahRandDirecEnv'],
+                'probs': [0.5, 0.5],
+
+                # sampler config
+                'rollouts_per_meta_task': 20,
+                'max_path_length': 100,
+                'parallel': True,
+
+                # sample processor config
+                'discount': 0.99,
+                'gae_lambda': 1,
+                'normalize_adv': True,
+
+                # policy config
+                'hidden_sizes': (64, 64),
+                'learn_std': True,  # whether to learn the standard deviation of the gaussian policy
+
+                # E-MAML config
+                'inner_lr': 0.1,  # adaptation step size
+                'learning_rate': 1e-3,  # meta-policy gradient step size
+                'step_size': 0.01,  # size of the TRPO trust-region
+                'n_itr': 1001,  # number of overall training iterations
+                'meta_batch_size': 40,  # number of sampled meta-tasks per iterations
+                'num_inner_grad_steps': 1,  # number of inner / adaptation gradient steps
+                'inner_type': 'log_likelihood',  # type of inner loss function used
+
+                'multi_maml': True,
+                'phi_test': False,
+                'switch_thresh': 2,
+                'num_clusters_upper_lim': 2,
+            }
+        elif mode == "KAML with phi initialization":
+            config = {
+                'seed': 1,
+
+                'baseline': 'LinearFeatureBaseline',
+
+                'env': ['AntRandDirecEnv', 'HalfCheetahRandDirecEnv'],
+                'probs': [0.5, 0.5],
+
+                # sampler config
+                'rollouts_per_meta_task': 20,
+                'max_path_length': 100,
+                'parallel': True,
+
+                # sample processor config
+                'discount': 0.99,
+                'gae_lambda': 1,
+                'normalize_adv': True,
+
+                # policy config
+                'hidden_sizes': (64, 64),
+                'learn_std': True,  # whether to learn the standard deviation of the gaussian policy
+
+                # E-MAML config
+                'inner_lr': 0.1,  # adaptation step size
+                'learning_rate': 1e-3,  # meta-policy gradient step size
+                'step_size': 0.01,  # size of the TRPO trust-region
+                'n_itr': 1001,  # number of overall training iterations
+                'meta_batch_size': 40,  # number of sampled meta-tasks per iterations
+                'num_inner_grad_steps': 1,  # number of inner / adaptation gradient steps
+                'inner_type': 'log_likelihood',  # type of inner loss function used
+
+                'multi_maml': True,
+                'phi_test': True,
+                'switch_thresh': 200,
+                'num_clusters_upper_lim': 2,
+            }
+        # Basically MultiMAML
+        elif mode == "KAML with late theta initialization":
+            config = {
+                'seed': 1,
+
+                'baseline': 'LinearFeatureBaseline',
+
+                'env': ['AntRandDirecEnv', 'HalfCheetahRandDirecEnv'],
+                'probs': [0.5, 0.5],
+
+                # sampler config
+                'rollouts_per_meta_task': 20,
+                'max_path_length': 100,
+                'parallel': True,
+
+                # sample processor config
+                'discount': 0.99,
+                'gae_lambda': 1,
+                'normalize_adv': True,
+
+                # policy config
+                'hidden_sizes': (64, 64),
+                'learn_std': True,  # whether to learn the standard deviation of the gaussian policy
+
+                # E-MAML config
+                'inner_lr': 0.1,  # adaptation step size
+                'learning_rate': 1e-3,  # meta-policy gradient step size
+                'step_size': 0.01,  # size of the TRPO trust-region
+                'n_itr': 1001,  # number of overall training iterations
+                'meta_batch_size': 40,  # number of sampled meta-tasks per iterations
+                'num_inner_grad_steps': 1,  # number of inner / adaptation gradient steps
+                'inner_type': 'log_likelihood',  # type of inner loss function used
+
+                'multi_maml': True,
+                'phi_test': False,
+                'switch_thresh': 2000,
+                'num_clusters_upper_lim': 2,
+            }
+        else:
+            assert 1 == 2, "Unknown mode {}".format(mode)
 
     # configure logger
     logger.configure(dir=args.dump_path, format_strs=['stdout', 'log', 'csv', 'tensorboard'],
                      snapshot_mode='last_gap')
-
+    logger.log("Training for {}".format(mode))
     # dump run configuration before starting training
     json.dump(config, open(args.dump_path +
                            '/params.json', 'w'), cls=ClassEncoder)
