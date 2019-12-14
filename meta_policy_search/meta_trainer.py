@@ -500,7 +500,8 @@ class KAML_Test_Trainer(object):
                 params = self.get_itr_snapshot(itr)
                 if itr % 25 == 0:
                     print("Saving model...")
-                    self.saver.save(sess, './MultiMaml_{}_PhiTest_{}_Iteration_{}'.format(multi_maml, phi_test, itr))
+#                     self.saver.save(sess, './MultiMaml_{}_PhiTest_{}_Iteration_{}'.format(multi_maml, phi_test, itr))
+                    self.saver.save(sess, './{}_Iteration_{}'.format("_".join(self.mode_name.split()), itr))
                 logger.save_itr_params(itr, params)
                 logger.log("Saved")
 
