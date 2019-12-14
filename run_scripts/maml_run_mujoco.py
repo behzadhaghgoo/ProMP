@@ -15,7 +15,7 @@ from meta_policy_search.envs.mujoco_envs.ant_rand_direc import AntRandDirecEnv
 from meta_policy_search.envs.mujoco_envs.half_cheetah_rand_direc import HalfCheetahRandDirecEnv
 from meta_policy_search.baselines.linear_baseline import LinearFeatureBaseline
 import sys
-sys.path.append('~/ProMP/')
+sys.path.append('~/cml/')
 
 
 meta_policy_search_path = '/'.join(os.path.realpath(
@@ -24,7 +24,7 @@ meta_policy_search_path = '/'.join(os.path.realpath(
 
 def main(config):
     assert len(config['probs']) == len(config['env'])
-    set_seed(config['seed'])
+    set_seed(config['seed']) # TODO: what is this line doing?
 
     baseline = globals()[config['baseline']]()  # instantiate baseline
 
@@ -90,7 +90,8 @@ def main(config):
         theta_count=num_clusters_upper_lim,
         multi_maml = config['multi_maml'],
         phi_test = config['phi_test'],
-        switch_thresh = config['switch_thresh']
+        switch_thresh = config['switch_thresh'],
+        mode_name = config['mode_name'],
     )
     print("start training")
     trainer.train()
@@ -113,7 +114,9 @@ if __name__ == "__main__":
                 "KAML with no initialization", 
                 "KAML with phi initialization", 
                 "KAML with late theta initialization"]
+    
     mode = modes[0]
+    logger.log("mode: {}".format(mode))
     
     if args.config_file:  # load configuration from json file
         with open(args.config_file, 'r') as f:
@@ -156,8 +159,15 @@ if __name__ == "__main__":
                 'phi_test': False,
                 'switch_thresh': 1000,
                 'num_clusters_upper_lim': 1,
+                'mode_name': str(mode),
 
             }
+            assert len(config['probs']) == 2
+            assert config['num_clusters_upper_lim'] == 1
+            assert config['multi_maml'] == False
+            assert config['phi_test'] == False
+            
+            
         elif mode == "KAML with no initialization":
             config = {
                 'seed': 1,
@@ -194,7 +204,15 @@ if __name__ == "__main__":
                 'phi_test': False,
                 'switch_thresh': 2,
                 'num_clusters_upper_lim': 2,
+                'mode_name': str(mode),
             }
+            
+            assert len(config['probs']) == 2
+            assert config['num_clusters_upper_lim'] == 2
+            assert config['multi_maml'] == True
+            assert config['phi_test'] == False
+            assert config['switch_thresh'] < 5
+            
         elif mode == "KAML with phi initialization":
             config = {
                 'seed': 1,
@@ -231,7 +249,14 @@ if __name__ == "__main__":
                 'phi_test': True,
                 'switch_thresh': 200,
                 'num_clusters_upper_lim': 2,
+                'mode_name': str(mode),
             }
+            assert len(config['probs']) == 2
+            assert config['num_clusters_upper_lim'] == 2
+            assert config['multi_maml'] == True
+            assert config['phi_test'] == True
+            assert config['switch_thresh'] > 100
+            
         # Basically MultiMAML
         elif mode == "KAML with late theta initialization":
             config = {
@@ -269,7 +294,13 @@ if __name__ == "__main__":
                 'phi_test': False,
                 'switch_thresh': 2000,
                 'num_clusters_upper_lim': 2,
+                'mode_name': str(mode), 
             }
+            assert len(config['probs']) == 2
+            assert config['num_clusters_upper_lim'] == 2
+            assert config['multi_maml'] == True
+            assert config['phi_test'] == False
+            assert config['switch_thresh'] > 200
         else:
             assert 1 == 2, "Unknown mode {}".format(mode)
 

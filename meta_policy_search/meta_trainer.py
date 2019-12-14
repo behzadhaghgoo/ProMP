@@ -256,6 +256,7 @@ class KAML_Test_Trainer(object):
             multi_maml = False,
             phi_test = False,
             switch_thresh = False,
+            mode_name = None,
     ):
         print("initialize KAML test trainer")
         self.algos = algos
@@ -277,7 +278,7 @@ class KAML_Test_Trainer(object):
         self.multi_maml = multi_maml
         self.phi_test = phi_test
         self.switch_thresh = switch_thresh
-
+        self.mode_name = mode_name
         assert len(samplers) == len(
             probs), "len(samplers) = {} != {} = len(probs)".format(len(samplers), len(probs))
 
@@ -320,12 +321,13 @@ class KAML_Test_Trainer(object):
 
             start_time = time.time()
             for itr in range(self.start_itr, self.n_itr):
-
-                logger.logkv("Iteration time elapsed", self.timer.time_elapsed())
-
+            
+#                 logger.logkv("Iteration time elapsed", self.timer.time_elapsed())
+                
                 itr_start_time = time.time()
                 logger.log(
                     "\n ---------------- Iteration %d ----------------" % itr)
+                logger.log("Mode: {}".format(self.mode_name))
                 logger.log(
                     "Sampling set of tasks/goals for this meta-batch...")
 
