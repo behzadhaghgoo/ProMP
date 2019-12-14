@@ -300,7 +300,6 @@ class KAML_Test_Trainer(object):
         
         switch_thresh = 100
         
-        
         with self.sess.as_default() as sess:
 
             # initialize uninitialized vars  (only initialize vars that were not loaded)
@@ -460,8 +459,11 @@ class KAML_Test_Trainer(object):
                     # Fill the batch to make the shape right. 
                     x = (all_algo_all_samples_data[a_ind, :, list(
                         relevant_data_indices)])  # 21 x 2
+                    
                     if phi_test:
-                        x = x[0]
+                        x = x[0:1,:]
+                        print("x.shape = {}".format(x.shape))
+                    
                     difference = self.meta_batch_size - x.shape[0]
                     sample_indices = np.random.choice(
                         x.shape[0], difference, replace=True)
