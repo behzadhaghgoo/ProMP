@@ -17,6 +17,14 @@ from meta_policy_search.baselines.linear_baseline import LinearFeatureBaseline
 import sys
 sys.path.append('~/cml/')
 
+modes = ["MAML on two envs", 
+         "MultiMAML", 
+         "KAML with no initialization", 
+         "KAML with phi initialization", 
+         "KAML with late theta initialization"]
+    
+mode = "KAML with phi initialization"
+
 
 meta_policy_search_path = '/'.join(os.path.realpath(
     os.path.dirname(__file__)).split('/')[:-1])
@@ -99,7 +107,7 @@ def main(config):
 
 if __name__ == "__main__":
     idx = int(time.time())
-
+    assert mode in modes, "unknown mode"
     parser = argparse.ArgumentParser(
         description='ProMP: Proximal Meta-Policy Search')
     parser.add_argument('--config_file', type=str, default='',
@@ -109,13 +117,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    modes = ["MAML on two envs", 
-                "MultiMAML", 
-                "KAML with no initialization", 
-                "KAML with phi initialization", 
-                "KAML with late theta initialization"]
     
-    mode = modes[0]
     logger.log("mode: {}".format(mode))
     
     if args.config_file:  # load configuration from json file
