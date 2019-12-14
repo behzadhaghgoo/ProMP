@@ -295,7 +295,7 @@ class KAML_Test_Trainer(object):
         """
 
         self.timer.start()
-        multi_maml = False
+        multi_maml = True
 
         with self.sess.as_default() as sess:
 
@@ -307,9 +307,7 @@ class KAML_Test_Trainer(object):
             start_time = time.time()
             for itr in range(self.start_itr, self.n_itr):
 
-                print("\n\n\n\n\n")
-                self.timer.time_elapsed()
-                print("\n\n\n\n\n")
+                logger.logkv("Iteration time elapsed", self.timer.time_elapsed())
 
                 itr_start_time = time.time()
                 logger.log(
@@ -429,7 +427,7 @@ class KAML_Test_Trainer(object):
                       all_algo_inner_loop_losses.shape)  # (1, 2, 40)
                 print("true_indices shape", true_indices.shape)
 
-                if multi_maml and itr < 200:
+                if multi_maml and itr < 4000:
                     which_algo = true_indices
                 else:
                     which_algo = np.argmin(
@@ -449,6 +447,8 @@ class KAML_Test_Trainer(object):
                         "all_algo_all_samples_data[a_ind, :, relevant_data_indices]")
                     # print(list(relevant_data_indices))
                     # print(all_algo_all_samples_data[a_ind, :, list(relevant_data_indices)].shape)
+                    
+                    # Fill the batch to make the shape right. 
                     x = (all_algo_all_samples_data[a_ind, :, list(
                         relevant_data_indices)])  # 21 x 2
                     difference = self.meta_batch_size - x.shape[0]
@@ -485,7 +485,7 @@ class KAML_Test_Trainer(object):
                 params = self.get_itr_snapshot(itr)
                 if itr % 25 == 0:
                     print("Saving model...")
-                    self.saver.save(sess, './ant_2_{}'.format(itr))
+                    self.saver.save(sess, './dual_{}'.format(itr))
                 logger.save_itr_params(itr, params)
                 logger.log("Saved")
 
