@@ -23,7 +23,7 @@ modes = ["MAML on two envs",
          "KAML with phi initialization", 
          "KAML with late theta initialization"]
     
-mode = "KAML with phi initialization"
+mode = "MAML on two envs"
 
 
 meta_policy_search_path = '/'.join(os.path.realpath(
@@ -44,6 +44,7 @@ def main(config):
 
     num_clusters_upper_lim = config['num_clusters_upper_lim'] #len(envs)
 
+    # Create a policy for each theta.
     policies = [MetaGaussianMLPPolicy(
         name="meta-policy-{}".format(i),
         obs_dim=max_obs_dim,
@@ -52,8 +53,8 @@ def main(config):
         hidden_sizes=config['hidden_sizes'],
     ) for i in range(num_clusters_upper_lim)]
 
-    print("create a sampler for each env")
-
+    # Create a sampler for each environment. 
+    print("creating a sampler for each env")
     samplers = [MetaSampler(
         env=env,
         # This batch_size is confusing
@@ -72,8 +73,9 @@ def main(config):
         gae_lambda=config['gae_lambda'],
         normalize_adv=config['normalize_adv'],
     )
-    print("create algorithms (thetas)")
-
+    
+    # Create an algorithm for each theta. 
+    print("create algorithms")
     algos = []
     for i in range(num_clusters_upper_lim):
         algos.append(TRPOMAML(
@@ -85,6 +87,8 @@ def main(config):
             num_inner_grad_steps=config['num_inner_grad_steps'],
             exploration=False,
         ))
+        print("\n\nalgorithm {} created.\n\n".format(i))
+        
     print("define trainer")
     trainer = KAML_Test_Trainer(
         algos=algos,
@@ -165,6 +169,7 @@ if __name__ == "__main__":
 
             }
             assert len(config['probs']) == 2
+            assert len(config['env']) == 2
             assert config['num_clusters_upper_lim'] == 1
             assert config['multi_maml'] == False
             assert config['phi_test'] == False
