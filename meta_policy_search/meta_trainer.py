@@ -253,8 +253,8 @@ class KAML_Test_Trainer(object):
             num_inner_grad_steps=1,
             sess=None,
             theta_count=2,
-            multi_maml = False, 
-            phi_test = False, 
+            multi_maml = False,
+            phi_test = False,
             switch_thresh = False,
     ):
         print("initialize KAML test trainer")
@@ -273,11 +273,11 @@ class KAML_Test_Trainer(object):
         self.saver = tf.train.Saver()
         self.num_envs = len(envs)
         self.meta_batch_size = self.samplers[0].meta_batch_size
-        
+
         self.multi_maml = multi_maml
         self.phi_test = phi_test
         self.switch_thresh = switch_thresh
-        
+
         assert len(samplers) == len(
             probs), "len(samplers) = {} != {} = len(probs)".format(len(samplers), len(probs))
 
@@ -302,7 +302,7 @@ class KAML_Test_Trainer(object):
         """
 
         self.timer.start()
-        
+
         multi_maml = self.multi_maml
         phi_test = self.phi_test
         switch_thresh = self.switch_thresh
@@ -310,7 +310,7 @@ class KAML_Test_Trainer(object):
 #         multi_maml = True
 #         phi_test = False
 #         switch_thresh = 1000
-        
+
         with self.sess.as_default() as sess:
 
             # initialize uninitialized vars  (only initialize vars that were not loaded)
@@ -329,7 +329,7 @@ class KAML_Test_Trainer(object):
                 logger.log(
                     "Sampling set of tasks/goals for this meta-batch...")
 
-                # Update tasks if not in the initial phi phase. 
+                # Update tasks if not in the initial phi phase.
                 if not phi_test or itr > switch_thresh:
                     for sampler in self.samplers:
                         sampler.update_tasks()
@@ -434,51 +434,43 @@ class KAML_Test_Trainer(object):
                     all_algo_inner_loop_losses)
                 true_indices = np.array(true_indices)
 
-                print("all_algo_all_samples_data shape",
-                      all_algo_all_samples_data.shape)
-                print("all_algo_inner_loop_losses shape",
-                      all_algo_inner_loop_losses.shape)  # (1, 2, 40)
-                print("true_indices shape", true_indices.shape)
-
-                
-                
                 if (multi_maml or phi_test) and itr < switch_thresh:
-                    which_algo = true_indices                    
+                    which_algo = true_indices
                 else:
                     which_algo = np.argmin(
                         all_algo_inner_loop_losses, axis=0)  # length num_tasks
-                print("which_algo shape: ", which_algo.shape)
+                # print("which_algo shape: ", which_algo.shape)
 
                 # For each algo, do outer update
 
                 for a_ind, algo in enumerate(self.algos[:self.theta_count]):
                     # Get all indices of data from tasks that were assigned to this algo
                     relevant_data_indices = (which_algo == a_ind)
-                    print("relevant_data_indices", relevant_data_indices.shape)
+                    # print("relevant_data_indices", relevant_data_indices.shape)
                     relevant_data_indices = np.nonzero(
                         relevant_data_indices)[0]
-                    print("relevant_data_indices", relevant_data_indices.shape)
+                    # print("relevant_data_indices", relevant_data_indices.shape)
                     print(
                         "all_algo_all_samples_data[a_ind, :, relevant_data_indices]")
-                    
-                    # Fill the batch to make the shape right. 
+
+                    # Fill the batch to make the shape right.
                     x = (all_algo_all_samples_data[a_ind, :, list(
                         relevant_data_indices)])  # 21 x 2
-                    
-                    # if in the initial phase of phi_test, cut x to one example. 
+
+                    # if in the initial phase of phi_test, cut x to one example.
                     if phi_test and itr < switch_thresh:
                         print("initial x.shape = {}".format(x.shape))
                         x = x[0:1,:]
                         print("converted to x.shape = {}".format(x.shape))
-                    
+
                     difference = self.meta_batch_size - x.shape[0]
                     sample_indices = np.random.choice(
                         x.shape[0], difference, replace=True)
-                    
+
                     new_x = np.concatenate([x, x[sample_indices]], axis=0)
                     np.random.shuffle(new_x)
 
-                    print("optimize policy input", new_x.shape)
+                    # print("optimize policy input", new_x.shape)
                     algo.optimize_policy(new_x.T)
 
                 clustering_score = np.abs(
