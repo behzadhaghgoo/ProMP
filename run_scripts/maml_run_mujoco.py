@@ -23,7 +23,7 @@ modes = ["MAML on two envs",
          "KAML with phi initialization", 
          "KAML with late theta initialization"]
     
-mode = "MAML on two envs"
+mode = "KAML with late theta initialization"
 
 
 meta_policy_search_path = '/'.join(os.path.realpath(

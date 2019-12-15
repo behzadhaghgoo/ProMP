@@ -304,16 +304,37 @@ class KAML_Test_Trainer(object):
 
         self.timer.start()
 
+        # Set experiment parameters 
         multi_maml = self.multi_maml
         phi_test = self.phi_test
         switch_thresh = self.switch_thresh
-
-#         multi_maml = True
-#         phi_test = False
-#         switch_thresh = 1000
+        
+        #######################################
+        #######################################
+        #######################################
+        
+        load_checkpoint = False
+        print("load_checkpoint is {}".format(load_checkpoint))
+        
+        #######################################
+        ############# Loader Code #############
+        #######################################
+        
+        checkpoint_name = None
+        if load_checkpoint: 
+            assert checkpoint_name, "Provide checkpoint name."
+        print("loading from checkpoint {}".format(checkpoint_name))
+        
+        #######################################
+        #######################################
+        #######################################
 
         with self.sess.as_default() as sess:
 
+            if load_checkpoint:
+                saver = tf.train.import_meta_graph('{}.meta'.format(checkpoint_name))
+                saver.restore(sess,checkpoint_name)
+                
             # initialize uninitialized vars  (only initialize vars that were not loaded)
             uninit_vars = [var for var in tf.global_variables(
             ) if not sess.run(tf.is_variable_initialized(var))]
