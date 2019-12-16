@@ -31,6 +31,13 @@ class Timer():
         self.time = time.time()
         self.counter = 0
 
+def calc_path_avg_return(path):
+    average_discounted_return = np.mean(
+        [path["returns"][0] for path in paths])
+    undiscounted_returns = [sum(path["rewards"]) for path in paths] # Average returns
+    return undiscounted_returns
+
+do_it_with_return_please = True
 
 # class Trainer(object):
 #     """
@@ -304,27 +311,27 @@ class KAML_Test_Trainer(object):
 
         self.timer.start()
 
-        # Set experiment parameters 
+        # Set experiment parameters
         multi_maml = self.multi_maml
         phi_test = self.phi_test
         switch_thresh = self.switch_thresh
-        
+
         #######################################
         #######################################
         #######################################
-        
+
         load_checkpoint = False
         print("load_checkpoint is {}".format(load_checkpoint))
-        
+
         #######################################
         ############# Loader Code #############
         #######################################
-        
+
         checkpoint_name = None
-        if load_checkpoint: 
+        if load_checkpoint:
             assert checkpoint_name, "Provide checkpoint name."
         print("loading from checkpoint {}".format(checkpoint_name))
-        
+
         #######################################
         #######################################
         #######################################
@@ -334,7 +341,7 @@ class KAML_Test_Trainer(object):
             if load_checkpoint:
                 saver = tf.train.import_meta_graph('{}.meta'.format(checkpoint_name))
                 saver.restore(sess,checkpoint_name)
-                
+
             # initialize uninitialized vars  (only initialize vars that were not loaded)
             uninit_vars = [var for var in tf.global_variables(
             ) if not sess.run(tf.is_variable_initialized(var))]
@@ -342,9 +349,9 @@ class KAML_Test_Trainer(object):
 
             start_time = time.time()
             for itr in range(self.start_itr, self.n_itr):
-            
+
 #                 logger.logkv("Iteration time elapsed", self.timer.time_elapsed())
-                
+
                 itr_start_time = time.time()
                 logger.log(
                     "\n ---------------- Iteration %d ----------------" % itr)
@@ -365,6 +372,7 @@ class KAML_Test_Trainer(object):
                                              for _ in range(self.theta_count)]
                 # shape : num_algos, num_tasks
                 all_algo_inner_loop_losses = []
+                all_algo_inner_loop_returns = []
 
                 true_indices = []
                 for task_ind in range(self.meta_batch_size):
@@ -374,6 +382,7 @@ class KAML_Test_Trainer(object):
 
                 # For each theta in thetas, we obtain trajectories from the same tasks from both environments
                 algo_samples_reward_data = []
+
                 for a_ind, algo in enumerate(self.algos[:self.theta_count]):
                     # algo_inner_loop_losses = []
                     # algo_all_samples_data = []
@@ -415,8 +424,14 @@ class KAML_Test_Trainer(object):
                         logger.log("Processing samples...")
                         time_proc_samples_start = time.time()
                         samples_data = self.sample_processor.process_samples(
-                            paths, log='all', log_prefix='Step_%d-' % step)                            
+                            paths, log='all', log_prefix='Step_%d-' % step)
                         # (number of inner updates, meta_batch_size)
+
+                        if step == self.num_inner_grad_steps:
+                            print("path['returns']", path["returns"])
+                            algo_returns = [calc_path_avg_return(path) for path in paths]
+                            all_algo_inner_loop_returns.append(algo_returns)
+
 
                         all_algo_all_samples_data[a_ind].append(samples_data)
 
@@ -461,11 +476,21 @@ class KAML_Test_Trainer(object):
                     all_algo_inner_loop_losses)
                 true_indices = np.array(true_indices)
 
-                if (multi_maml or phi_test) and itr < switch_thresh:
-                    which_algo = true_indices
+                if do_it_with_return_please:
+                    print("wise choice")
+                    if (multi_maml or phi_test) and itr < switch_thresh:
+                        which_algo = true_indices
+                    else:
+                        which_algo = np.argmax(
+                            all_algo_inner_loop_returns, axis=0)  # length num_tasks
                 else:
-                    which_algo = np.argmin(
-                        all_algo_inner_loop_losses, axis=0)  # length num_tasks
+                    print("think twice")
+                    if (multi_maml or phi_test) and itr < switch_thresh:
+                        which_algo = true_indices
+                    else:
+                        which_algo = np.argmin(
+                            all_algo_inner_loop_losses, axis=0)  # length num_tasks
+
                 # print("which_algo shape: ", which_algo.shape)
 
                 # For each algo, do outer update
@@ -484,10 +509,10 @@ class KAML_Test_Trainer(object):
                     # Fill the batch to make the shape right.
                     x = (all_algo_all_samples_data[a_ind, :, list(
                         relevant_data_indices)])  # 21 x 2
-                    
+
 #                     print(algo_samples_reward_data)
                     path_list = algo_samples_reward_data[a_ind]
-                
+
                     for index in relevant_data_indices:
                         path = path_list[index]
                         relevant_paths[count] = path
