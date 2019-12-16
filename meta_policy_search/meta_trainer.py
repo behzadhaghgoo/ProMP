@@ -505,7 +505,7 @@ class KAML_Test_Trainer(object):
                     # print("optimize policy input", new_x.shape)
                     algo.optimize_policy(new_x.T)
 
-                self.sample_processor._log_path_stats(relevant_paths, log='reward', log_prefix='Step_2-')
+                self.sample_processor._helper(relevant_paths, log='reward', log_prefix='Step_2-')
 
                 clustering_score = np.abs(
                     np.mean(np.abs(true_indices - which_algo)) - 0.5) * 2.0
