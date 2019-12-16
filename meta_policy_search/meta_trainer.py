@@ -469,7 +469,8 @@ class KAML_Test_Trainer(object):
                 # print("which_algo shape: ", which_algo.shape)
 
                 # For each algo, do outer update
-                relevant_paths = []
+                relevant_paths = OrderedDict()
+                count = 0
                 for a_ind, algo in enumerate(self.algos[:self.theta_count]):
                     # Get all indices of data from tasks that were assigned to this algo
                     relevant_data_indices = (which_algo == a_ind)
@@ -486,8 +487,11 @@ class KAML_Test_Trainer(object):
                     
 #                     print(algo_samples_reward_data)
                     path_list = algo_samples_reward_data[a_ind]
+                
                     for index in relevant_data_indices:
-                        relevant_paths.append(path_list[index])
+                        path = path_list[index]
+                        relevant_paths[count] = path
+                        count += 1
 
                     # if in the initial phase of phi_test, cut x to one example.
                     if phi_test and itr < switch_thresh:

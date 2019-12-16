@@ -97,7 +97,7 @@ class SampleProcessor(object):
 
     """ helper functions """
 
-    def _helper(self, paths, log=log, log_prefix=''):
+    def _helper_parent(self, paths, log=False, log_prefix=''):
         assert type(paths) == list
         for idx, path in enumerate(paths):
             path["returns"] = utils.discount_cumsum(
@@ -109,7 +109,7 @@ class SampleProcessor(object):
 
         # 3) compute advantages and adjusted rewards
         paths = self._compute_advantages(paths, all_path_baselines)
-        self._log_path_stats(paths, log=log, log_prefix='')
+        return paths
 
     def _compute_samples_data(self, paths):
         assert type(paths) == list
