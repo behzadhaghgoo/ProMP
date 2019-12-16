@@ -373,6 +373,7 @@ class KAML_Test_Trainer(object):
                     true_indices.append(index)
 
                 # For each theta in thetas, we obtain trajectories from the same tasks from both environments
+                algo_samples_reward_data = []
                 for a_ind, algo in enumerate(self.algos[:self.theta_count]):
                     # algo_inner_loop_losses = []
                     # algo_all_samples_data = []
@@ -403,6 +404,9 @@ class KAML_Test_Trainer(object):
                             index = true_indices[task_ind]
                             paths[task_ind] = initial_paths[index][task_ind]
 
+                        if step == self.num_inner_grad_steps:
+                            algo_samples_reward_data.append(paths)
+
                         list_sampling_time.append(
                             time.time() - time_env_sampling_start)
 
@@ -411,7 +415,7 @@ class KAML_Test_Trainer(object):
                         logger.log("Processing samples...")
                         time_proc_samples_start = time.time()
                         samples_data = self.sample_processor.process_samples(
-                            paths, log='all', log_prefix='Step_%d-' % step)
+                            paths, log='all', log_prefix='Step_%d-' % step)                            
                         # (number of inner updates, meta_batch_size)
 
                         all_algo_all_samples_data[a_ind].append(samples_data)
@@ -465,7 +469,7 @@ class KAML_Test_Trainer(object):
                 # print("which_algo shape: ", which_algo.shape)
 
                 # For each algo, do outer update
-
+                relevant_paths = []
                 for a_ind, algo in enumerate(self.algos[:self.theta_count]):
                     # Get all indices of data from tasks that were assigned to this algo
                     relevant_data_indices = (which_algo == a_ind)
@@ -479,6 +483,10 @@ class KAML_Test_Trainer(object):
                     # Fill the batch to make the shape right.
                     x = (all_algo_all_samples_data[a_ind, :, list(
                         relevant_data_indices)])  # 21 x 2
+                    
+                    for path_list in algo_samples_reward_data[a_ind]:
+                        for index in relevant_data_indices:
+                            relevant_paths.append(path_list[index])
 
                     # if in the initial phase of phi_test, cut x to one example.
                     if phi_test and itr < switch_thresh:
@@ -495,6 +503,8 @@ class KAML_Test_Trainer(object):
 
                     # print("optimize policy input", new_x.shape)
                     algo.optimize_policy(new_x.T)
+
+                self.sample_processor.log_path_stats(relevant_paths, log='reward', log_prefix='Step_2-')
 
                 clustering_score = np.abs(
                     np.mean(np.abs(true_indices - which_algo)) - 0.5) * 2.0
