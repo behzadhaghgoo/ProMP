@@ -23,7 +23,7 @@ modes = ["MAML on two envs",
          "KAML with phi initialization", 
          "KAML with late theta initialization"]
     
-mode = "KAML with phi initialization"
+mode = "KAML with late theta initialization"
 
 
 meta_policy_search_path = '/'.join(os.path.realpath(
@@ -299,7 +299,7 @@ if __name__ == "__main__":
 
                 'multi_maml': True,
                 'phi_test': False,
-                'switch_thresh': 2000,
+                'switch_thresh': 0,
                 'num_clusters_upper_lim': 2,
                 'mode_name': str(mode), 
             }
@@ -307,7 +307,7 @@ if __name__ == "__main__":
             assert config['num_clusters_upper_lim'] == 2
             assert config['multi_maml'] == True
             assert config['phi_test'] == False
-            assert config['switch_thresh'] > 200
+            assert config['switch_thresh'] < 200
         else:
             assert 1 == 2, "Unknown mode {}".format(mode)
 

@@ -31,13 +31,9 @@ class Timer():
         self.time = time.time()
         self.counter = 0
 
-def calc_path_avg_return(path):
-    average_discounted_return = np.mean(
-        [path["returns"][0] for path in paths])
-    undiscounted_returns = [sum(path["rewards"]) for path in paths] # Average returns
-    return undiscounted_returns
 
-do_it_with_return_please = True
+
+do_it_with_return_please = False #True
 
 # class Trainer(object):
 #     """
@@ -320,18 +316,17 @@ class KAML_Test_Trainer(object):
         #######################################
         #######################################
 
-        load_checkpoint = False
+        load_checkpoint = True
         print("load_checkpoint is {}".format(load_checkpoint))
 
         #######################################
         ############# Loader Code #############
         #######################################
 
-        checkpoint_name = None
+        checkpoint_name = "KAML_with_late_theta_initialization_Iteration_675"
         if load_checkpoint:
             assert checkpoint_name, "Provide checkpoint name."
-        print("loading from checkpoint {}".format(checkpoint_name))
-
+            
         #######################################
         #######################################
         #######################################
@@ -339,6 +334,7 @@ class KAML_Test_Trainer(object):
         with self.sess.as_default() as sess:
 
             if load_checkpoint:
+                print("loading from checkpoint {}".format(checkpoint_name))
                 saver = tf.train.import_meta_graph('{}.meta'.format(checkpoint_name))
                 saver.restore(sess,checkpoint_name)
 
@@ -427,9 +423,26 @@ class KAML_Test_Trainer(object):
                             paths, log='all', log_prefix='Step_%d-' % step)
                         # (number of inner updates, meta_batch_size)
 
+                        
+                        def calc_path_avg_return(path):
+#                             average_discounted_return = np.mean(
+#                                 [path["returns"][0] for path in paths])
+#                             print("paths[0]", paths[0])
+#                             print('path["rewards"]', paths[0][0]["rewards"])
+#                             print("len(path)", len(path))
+#                             print("len(rollout)",len(path[0]))
+#                             print("len(rollout)['rewards']",path[0]["rewards"])
+        
+                            undiscounted_returns = np.mean([sum(rollout["rewards"]) for rollout in path]) # Average returns
+                            return undiscounted_returns
+                        
                         if step == self.num_inner_grad_steps:
-                            print("path['returns']", path["returns"])
-                            algo_returns = [calc_path_avg_return(path) for path in paths]
+#                             print("path['returns']", paths[0]["returns"])
+#                             print("len(paths)", len(paths))
+#                             for i, path in enumerate(paths):
+#                                 print("path {} = {}".format(i, path))
+                            algo_returns = [calc_path_avg_return(paths[path]) for path in paths]
+                            print("len(algo_returns)", len(algo_returns))
                             all_algo_inner_loop_returns.append(algo_returns)
 
 
