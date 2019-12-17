@@ -59,7 +59,7 @@ class MetaAlgo(object):
         """
         raise NotImplementedError
 
-    def _adapt(self, samples):
+    def _adapt(self, samples, size=None):
         """
         Performs MAML inner step for each task and stores resulting gradients # (in the policy?)
 
@@ -110,6 +110,7 @@ class MAMLAlgo(MetaAlgo):
         self.trainable_inner_step_size = trainable_inner_step_size
 
         self.adapt_input_ph_dict = None
+        self.adapt_input_ph_dict_first = None
         self.loss_list = None
         self.adapted_policies_params = None
         self.step_sizes = None
@@ -156,9 +157,11 @@ class MAMLAlgo(MetaAlgo):
                 all_phs_dict['%s_task%i_agent_infos/%s' %
                              (prefix, task_id, info_key)] = ph
                 dist_info_ph_dict[info_key] = ph
+            if task_id == 0:
+                first_phs_dict = dict(all_phs_dict)
             dist_info_phs.append(dist_info_ph_dict)
 
-        return obs_phs, action_phs, adv_phs, dist_info_phs, all_phs_dict
+        return obs_phs, action_phs, adv_phs, dist_info_phs, all_phs_dict, first_phs_dict
 
     def _adapt_objective_sym(self, action_sym, adv_sym, dist_info_old_sym, dist_info_new_sym):
         raise NotImplementedError
@@ -176,7 +179,7 @@ class MAMLAlgo(MetaAlgo):
             adapt_input_list_ph (list): list of placeholders
 
         """
-        obs_phs, action_phs, adv_phs, dist_info_old_phs, adapt_input_ph_dict = self._make_input_placeholders(
+        obs_phs, action_phs, adv_phs, dist_info_old_phs, adapt_input_ph_dict, first_input_ph_dict = self._make_input_placeholders(
             'adapt')
 
         adapted_policies_params = []
@@ -199,7 +202,7 @@ class MAMLAlgo(MetaAlgo):
                 adapted_policies_params.append(adapted_policy_param)
                 loss_list.append(surr_obj_adapt)
 
-        return adapted_policies_params, adapt_input_ph_dict, loss_list
+        return adapted_policies_params, adapt_input_ph_dict, loss_list, first_input_ph_dict
 
     def _adapt_sym(self, surr_obj, params_var):
         """
@@ -228,7 +231,7 @@ class MAMLAlgo(MetaAlgo):
 
         return adapted_policy_params_dict
 
-    def _adapt(self, samples):
+    def _adapt(self, samples, size=None):
         """
         Performs MAML inner step for each task and stores the updated parameters in the policy
 
@@ -236,14 +239,19 @@ class MAMLAlgo(MetaAlgo):
             samples (list) : list of dicts of samples (each is a dict) split by meta task
 
         """
-        assert len(samples) == self.meta_batch_size
+        # print("len(samples) = {}, self.meta_batch_size = {}".format(len(samples), self.meta_batch_size))
+        size = size if size else self.meta_batch_size
+        assert len(samples) == size
         assert [sample_dict.keys() for sample_dict in samples]
         sess = tf.get_default_session()
 
         # prepare feed dict
         input_dict = self._extract_input_dict(
-            samples, self._optimization_keys, prefix='adapt')
-        input_ph_dict = self.adapt_input_ph_dict
+            samples, self._optimization_keys, prefix='adapt', size=size)
+        if size == self.meta_batch_size:
+            input_ph_dict = self.adapt_input_ph_dict
+        elif size == 1:
+            input_ph_dict = self.adapt_input_ph_dict_first
 
         feed_dict_inputs = utils.create_feed_dict(
             placeholder_dict=input_ph_dict, value_dict=input_dict)
@@ -251,18 +259,25 @@ class MAMLAlgo(MetaAlgo):
 
         # merge the two feed dicts
         feed_dict = {**feed_dict_inputs, **feed_dict_params}
-        adapted_policies_params_vals, loss_list = sess.run(
-            [self.adapted_policies_params, self.loss_list], feed_dict=feed_dict)
+        if size == self.meta_batch_size:
+            adapted_policies_params_vals, loss_list = sess.run(
+                [self.adapted_policies_params, self.loss_list], feed_dict=feed_dict)
+            self.policy.update_task_parameters(adapted_policies_params_vals)
+            return loss_list, adapted_policies_params_vals
+
+        elif size == 1:
+            adapted_policies_params_vals = sess.run(
+                self.adapted_policies_params, feed_dict=feed_dict)
+            return adapted_policies_params_vals
+
 #         assert feed_dict == feed_dict2, "feed_dict problem"
         # store the new parameter values in the policy
-        self.policy.update_task_parameters(adapted_policies_params_vals)
 
 #         meta_op_input_dict = self._extract_input_dict_meta_op([samples], self._optimization_keys)
 
 #         feed_dict = self.optimizer.create_feed_dict(meta_op_input_dict)
-        return loss_list
 
-    def _extract_input_dict(self, samples_data_meta_batch, keys, prefix=''):
+    def _extract_input_dict(self, samples_data_meta_batch, keys, prefix='', size=None):
         """
         Re-arranges a list of dicts containing the processed sample data into a OrderedDict that can be matched
         with a placeholder dict for creating a feed dict
@@ -276,8 +291,9 @@ class MAMLAlgo(MetaAlgo):
             OrderedDict containing the data from all_samples_data. The data keys follow the naming convention:
                 '<prefix>_task<task_number>_<key_name>'
         """
+        size = size if size else self.meta_batch_size
         input_dict = OrderedDict()
-        for meta_task in range(self.meta_batch_size):
+        for meta_task in range(size):
             extracted_data = utils.extract(
                 samples_data_meta_batch[meta_task], *keys
             )
@@ -298,65 +314,6 @@ class MAMLAlgo(MetaAlgo):
                     raise NotImplementedError
         return input_dict
 
-    def _extract_input_dict_new(self, samples_data_meta_batch, keys, prefix=''):
-        """
-        Re-arranges a list of dicts containing the processed sample data into a OrderedDict that can be matched
-        with a placeholder dict for creating a feed dict
-
-        Args:
-            samples_data_meta_batch (list) : list of dicts containing the processed data corresponding to each meta-task
-            keys (list) : a list of keys that should exist in each dict and whose values shall be extracted
-            prefix (str): prefix to prepend the keys in the resulting OrderedDict
-
-        Returns:
-            OrderedDict containing the data from all_samples_data. The data keys follow the naming convention:
-                '<prefix>_task<task_number>_<key_name>'
-        """
-        # assert len(samples_data_meta_batch) == self.meta_batch_size
-
-        input_dict = OrderedDict()
-        # print(len(samples_data_meta_batch))
-        # print(len(samples_data_meta_batch[0]))
-        for meta_task, sample_data in samples_data_meta_batch:
-            # print(sample_data)
-            extracted_data = utils.extract(sample_data, *keys)
-
-            # iterate over the desired data instances and corresponding keys
-            for j, (data, key) in enumerate(zip(extracted_data, keys)):
-                if isinstance(data, dict):
-                    # if the data instance is a dict -> iterate over the items of this dict
-                    for k, d in data.items():
-                        assert isinstance(d, np.ndarray)
-                        input_dict['%s_task%i_%s/%s' %
-                                   (prefix, meta_task, key, k)] = d
-
-                elif isinstance(data, np.ndarray):
-                    input_dict['%s_task%i_%s' %
-                               (prefix, meta_task, key)] = data
-                else:
-                    raise NotImplementedError
-
-        # for meta_task in range(self.meta_batch_size):
-        #     extracted_data = utils.extract(
-        #         samples_data_meta_batch[meta_task], *keys
-        #     )
-
-        #     # iterate over the desired data instances and corresponding keys
-        #     for j, (data, key) in enumerate(zip(extracted_data, keys)):
-        #         if isinstance(data, dict):
-        #             # if the data instance is a dict -> iterate over the items of this dict
-        #             for k, d in data.items():
-        #                 assert isinstance(d, np.ndarray)
-        #                 input_dict['%s_task%i_%s/%s' %
-        #                            (prefix, meta_task, key, k)] = d
-
-        #         elif isinstance(data, np.ndarray):
-        #             input_dict['%s_task%i_%s' %
-        #                        (prefix, meta_task, key)] = data
-        #         else:
-        #             raise NotImplementedError
-        return input_dict
-
     def _extract_input_dict_meta_op(self, all_samples_data, keys):
         """
         Creates the input dict for all the samples data required to perform the meta-update
@@ -374,7 +331,7 @@ class MAMLAlgo(MetaAlgo):
         meta_op_input_dict = OrderedDict()
         # these are the gradient steps
         for step_id, samples_data in enumerate(all_samples_data):
-            dict_input_dict_step = self._extract_input_dict_new(
+            dict_input_dict_step = self._extract_input_dict(
                 samples_data, keys, prefix='step%i' % step_id)
             meta_op_input_dict.update(dict_input_dict_step)
 

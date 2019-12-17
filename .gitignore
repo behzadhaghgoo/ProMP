@@ -5,7 +5,12 @@ __pycache__/
 *DS_Store
 # C extensions
 *.so
-
+*.ipynb
+*.index
+*.meta
+*checkpoint*
+*data*
+Untitled.ipynb
 # Distribution / packaging
 .Python
 build/

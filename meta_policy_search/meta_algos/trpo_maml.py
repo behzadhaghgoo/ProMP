@@ -44,7 +44,6 @@ class TRPOMAML(MAMLAlgo):
             self._optimization_keys.append('adj_avg_rewards')
 
         self.optimizer = ConjugateGradientOptimizer()
-
         self.build_graph()
 
     def _adapt_objective_sym(self, action_sym, adv_sym, dist_info_old_sym, dist_info_new_sym):
@@ -83,11 +82,11 @@ class TRPOMAML(MAMLAlgo):
 
             """ --- Build inner update graph for adapting the policy and sampling trajectories --- """
             # this graph is only used for adapting the policy and not computing the meta-updates
-            self.adapted_policies_params, self.adapt_input_ph_dict, self.loss_list = self._build_inner_adaption()
+            self.adapted_policies_params, self.adapt_input_ph_dict, self.loss_list, self.adapt_input_ph_dict_first = self._build_inner_adaption()
 
             """ ----- Build graph for the meta-update ----- """
             self.meta_op_phs_dict = OrderedDict()
-            obs_phs, action_phs, adv_phs, dist_info_old_phs, all_phs_dict = self._make_input_placeholders(
+            obs_phs, action_phs, adv_phs, dist_info_old_phs, all_phs_dict, _ = self._make_input_placeholders(
                 'step0')
             self.meta_op_phs_dict.update(all_phs_dict)
 
@@ -123,7 +122,7 @@ class TRPOMAML(MAMLAlgo):
                 all_surr_objs.append(surr_objs)
 
                 # Create new placeholders for the next step
-                obs_phs, action_phs, adv_phs, dist_info_old_phs, all_phs_dict = self._make_input_placeholders(
+                obs_phs, action_phs, adv_phs, dist_info_old_phs, all_phs_dict, _ = self._make_input_placeholders(
                     'step%i' % step_id)
                 self.meta_op_phs_dict.update(all_phs_dict)
 

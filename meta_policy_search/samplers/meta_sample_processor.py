@@ -4,6 +4,21 @@ from meta_policy_search.utils import utils
 import numpy as np
 
 class MetaSampleProcessor(SampleProcessor):
+    
+    def _helper(self, paths_meta_batch, log=False, log_prefix=''):
+        assert isinstance(paths_meta_batch, dict), 'paths must be a dict'
+        assert self.baseline, 'baseline must be specified'
+
+        samples_data_meta_batch = []
+        all_paths = []
+
+        for meta_task, paths in paths_meta_batch.items():
+
+            # fits baseline, compute advantages and stack path data
+            paths = self._helper_parent(paths)
+            all_paths.extend(paths)
+        
+        self._log_path_stats(all_paths, log=log, log_prefix=log_prefix)
 
     def process_samples(self, paths_meta_batch, log=False, log_prefix=''):
         """

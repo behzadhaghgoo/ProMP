@@ -156,7 +156,7 @@ def create_feed_dict(placeholder_dict, value_dict):
     Returns: feed dict
 
     """
-    # print(len(set(placeholder_dict.keys())), len(set(value_dict.keys())))
+    print(len(set(placeholder_dict.keys())), len(set(value_dict.keys())))
     # print(set(placeholder_dict.keys()), set(value_dict.keys()))
     assert set(placeholder_dict.keys()) <= set(value_dict.keys(
     )), "value dict must provide the necessary data to serve all placeholders in placeholder_dict"
