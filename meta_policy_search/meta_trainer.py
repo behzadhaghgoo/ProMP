@@ -33,7 +33,7 @@ class Timer():
 
 
 
-do_it_with_return_please = False #True
+do_it_with_return_please = True
 
 # class Trainer(object):
 #     """
@@ -316,7 +316,7 @@ class KAML_Test_Trainer(object):
         #######################################
         #######################################
 
-        load_checkpoint = True
+        load_checkpoint = False
         print("load_checkpoint is {}".format(load_checkpoint))
 
         #######################################
