@@ -10,5 +10,4 @@ To load a model change the loading flag in `meta_policy_search/meta_trainer.py` 
 
 
 ## Acknowledgements
-This repository includes environments introduced in ([Duan et al., 2016](https://arxiv.org/abs/1611.02779), 
-[Finn et al., 2017](https://arxiv.org/abs/1703.03400)).
+This repository is a fork of a repository by `zhanpenghe` and we thank Tianhe Yu for helping us with structuring the code for our experiments.
