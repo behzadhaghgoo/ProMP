@@ -104,6 +104,7 @@ class MetaGaussianMLPPolicy(GaussianMLPPolicy, MetaPolicy):
         Returns:
             (tuple) : A tuple containing a list of numpy arrays of action, and a list of list of dicts of agent infos
         """
+#         print("len(observations), self.meta_batch_size", len(observations), self.meta_batch_size)
         assert len(observations) == self.meta_batch_size
 
         if self._pre_update_mode:
