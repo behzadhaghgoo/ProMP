@@ -112,6 +112,7 @@ class MAMLAlgo(MetaAlgo):
         self.adapt_input_ph_dict = None
         self.adapt_input_ph_dict_first = None
         self.loss_list = None
+        self.grads_list = None 
         self.adapted_policies_params = None
         self.step_sizes = None
 
@@ -184,6 +185,7 @@ class MAMLAlgo(MetaAlgo):
 
         adapted_policies_params = []
         loss_list = []
+        grads_list = [] 
 
         for i in range(self.meta_batch_size):
             with tf.variable_scope("adapt_task_%i" % i):
@@ -197,12 +199,14 @@ class MAMLAlgo(MetaAlgo):
 
                 # get tf operation for adapted (post-update) policy
                 with tf.variable_scope("adapt_step"):
-                    adapted_policy_param = self._adapt_sym(
+                    adapted_policy_param, gradients = self._adapt_sym( # might compute gradients here 
                         surr_obj_adapt, self.policy.policies_params_phs[i])
                 adapted_policies_params.append(adapted_policy_param)
                 loss_list.append(surr_obj_adapt)
+                grads_list.append(gradients) 
+        # grads_list = [tf.gradients(loss, tf.trainable_variables()) for loss in loss_list]
 
-        return adapted_policies_params, adapt_input_ph_dict, loss_list, first_input_ph_dict
+        return adapted_policies_params, adapt_input_ph_dict, loss_list, first_input_ph_dict, grads_list
 
     def _adapt_sym(self, surr_obj, params_var):
         """
@@ -229,7 +233,7 @@ class MAMLAlgo(MetaAlgo):
         adapted_policy_params_dict = OrderedDict(
             zip(update_param_keys, adapted_policy_params))
 
-        return adapted_policy_params_dict
+        return adapted_policy_params_dict, gradients 
 
     def _adapt(self, samples, size=None):
         """
@@ -260,10 +264,10 @@ class MAMLAlgo(MetaAlgo):
         # merge the two feed dicts
         feed_dict = {**feed_dict_inputs, **feed_dict_params}
         if size == self.meta_batch_size:
-            adapted_policies_params_vals, loss_list = sess.run(
-                [self.adapted_policies_params, self.loss_list], feed_dict=feed_dict)
+            adapted_policies_params_vals, loss_list, grads_list = sess.run(
+                [self.adapted_policies_params, self.loss_list, self.grads_list], feed_dict=feed_dict)
             self.policy.update_task_parameters(adapted_policies_params_vals)
-            return loss_list, adapted_policies_params_vals
+            return loss_list, adapted_policies_params_vals, grads_list
 
         elif size == 1:
             adapted_policies_params_vals = sess.run(
@@ -326,7 +330,7 @@ class MAMLAlgo(MetaAlgo):
         Returns:
 
         """
-        assert len(all_samples_data) == self.num_inner_grad_steps + 1
+        # assert len(all_samples_data) == self.num_inner_grad_steps + 1
 
         meta_op_input_dict = OrderedDict()
         # these are the gradient steps

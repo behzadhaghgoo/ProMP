@@ -8,7 +8,7 @@ from meta_policy_search.utils import logger
 from meta_policy_search.policies.meta_gaussian_mlp_policy import MetaGaussianMLPPolicy
 from meta_policy_search.samplers.meta_sample_processor import MetaSampleProcessor
 from meta_policy_search.samplers.meta_sampler import MetaSampler
-from meta_policy_search.meta_trainer import KAML_Test_Trainer
+from meta_policy_search.meta_trainer_giraffe import KAML_Test_Trainer # changed from meta_trainer 
 from meta_policy_search.meta_algos.trpo_maml import TRPOMAML
 from meta_policy_search.envs.normalized_env import normalize
 from meta_policy_search.envs.mujoco_envs.ant_rand_direc import AntRandDirecEnv
@@ -61,7 +61,6 @@ def main(config):
         # This batch_size is confusing
         rollouts_per_meta_task=config['rollouts_per_meta_task'],
         max_path_length=config['max_path_length'],
-
         meta_batch_size=int(config['meta_batch_size']),
         max_obs_dim=max_obs_dim,
         task_action_dim=env.action_space.shape[0],
@@ -96,7 +95,6 @@ def main(config):
         algos=algos,
         policies=policies,
         envs=envs,
-
         samplers=samplers,
         sample_processor=sample_processor,
         n_itr=config['n_itr'],

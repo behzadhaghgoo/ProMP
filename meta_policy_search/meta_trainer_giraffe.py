@@ -3,7 +3,8 @@ import numpy as np
 import time
 from meta_policy_search.utils import logger
 import numpy as np
-
+from sklearn.cluster import DBSCAN
+from copy import deepcopy
 from collections import OrderedDict
 
 
@@ -191,103 +192,244 @@ class KAML_Test_Trainer(object):
                 all_algo_inner_loop_losses = []
                 all_algo_inner_loop_returns = []
 
-                true_indices = []
-                for task_ind in range(self.meta_batch_size):
-                    index = np.random.choice(
-                        list(range(self.num_envs)), p=self.probs)
-                    true_indices.append(index)
-
                 # For each theta in thetas, we obtain trajectories from the same tasks from both environments
                 algo_samples_reward_data = []
                 
+                all_true_indices = []
+                for task_ind in range(self.meta_batch_size):
+                    index = np.random.choice(
+                                list(range(self.num_envs)), p=self.probs)
+                    all_true_indices.append(index)
+                
                 # new 
                 first_theta = self.algos[0]
-                current_thetas = [] 
+                #current_thetas = [first_theta] 
                 thetas = {}
+               # theta_vecs = {first_theta:}
                 task_to_theta = [first_theta for _ in range(self.meta_batch_size)]
-                
-                for a_ind, algo in enumerate(current_thetas):
-                    # algo_inner_loop_losses = []
-                    # algo_all_samples_data = []
-                    
-                    policy = algo.policy
-                    policy.switch_to_pre_update()  # Switch to pre-update policy
-                    
-                    # tasks for this theta 
-                    theta_tasks = np.argwhere(task_to_theta == algo) 
+                p2c = {first_theta: []}
+                theta_depth = {first_theta: 1}
+                max_depth = max([theta_depth[algo] for algo in theta_depth.keys()])
 
-                    # all_samples_data, all_paths, algo_all_samples = [], [], []
-                    list_sampling_time, list_inner_step_time, list_outer_step_time, list_proc_samples_time = [], [], [], []
-                    start_total_inner_time = time.time()
-                    algo_inner_loop_losses = []
 
-                    for step in range(self.num_inner_grad_steps+1):
-                        logger.log('** Step ' + str(step) + ' **')
+                clusterer = DBSCAN(eps=3, min_samples=1)
+                for depth_counter in range(max_depth + 1):
+                    max_depth = max([theta_depth[algo] for algo in theta_depth.keys()])
+                    for a_ind, algo in enumerate(list(set(task_to_theta))):
+                        # algo_inner_loop_losses = []
+                        # algo_all_samples_data = []
 
-                        """ -------------------- Sampling --------------------------"""
+                        policy = algo.policy
+                        policy.switch_to_pre_update()  # Switch to pre-update policy
 
-                        logger.log("Obtaining samples...")
-                        time_env_sampling_start = time.time()
+                        # tasks for this theta 
 
-                        # Meta-sampler's obtain_samples function now takes as input policy since we need trajectories for each policy
-                        initial_paths = [sampler.obtain_samples(
-                            policy=policy, log=True, log_prefix='Step_%d-' % step) for sampler in self.samplers][theta_tasks]
+                        def arg_where(input_list, example):
+                            return [i for i in range(len(input_list)) if input_list[i] == example]
+                        print("arg_where(task_to_theta, algo)", arg_where(task_to_theta, algo))                        
+                        theta_tasks = arg_where(task_to_theta, algo) 
 
-                        # get paths no matter step == 0 or 1
-                        paths = OrderedDict()
-                        for task_ind in range(self.meta_batch_size):
-                            index = true_indices[task_ind]
-                            paths[task_ind] = initial_paths[index][task_ind]
+                        # all_samples_data, all_paths, algo_all_samples = [], [], []
+                        list_sampling_time, list_inner_step_time, list_outer_step_time, list_proc_samples_time = [], [], [], []
+                        start_total_inner_time = time.time()
+                        algo_inner_loop_losses = []
 
-                        if step == self.num_inner_grad_steps:
-                            algo_samples_reward_data.append(paths)
+                        for step in range(1):
+                            logger.log('** Step ' + str(step) + ' **')
 
-                        list_sampling_time.append(
-                            time.time() - time_env_sampling_start)
+                            """ -------------------- Sampling --------------------------"""
 
-                        """ ----------------- Processing Samples ---------------------"""
+                            logger.log("Obtaining samples...")
+                            time_env_sampling_start = time.time()
 
-                        logger.log("Processing samples...")
-                        time_proc_samples_start = time.time()
-                        samples_data = self.sample_processor.process_samples(
-                            paths, log='all', log_prefix='Step_%d-' % step)
-                        # (number of inner updates, meta_batch_size)
-
-                        
-                        def calc_path_avg_return(path):
-                            undiscounted_returns = np.mean([sum(rollout["rewards"]) for rollout in path]) # Average returns
-                            return undiscounted_returns
-                        
-                        if step == self.num_inner_grad_steps:
-                            algo_returns = [calc_path_avg_return(paths[path]) for path in paths]
-                            print("len(algo_returns)", len(algo_returns))
-                            all_algo_inner_loop_returns.append(algo_returns)
-
-                        all_algo_all_samples_data[a_ind].append(samples_data)
-
-                        list_proc_samples_time.append(
-                            time.time() - time_proc_samples_start)
-
-                        self.log_diagnostics(
-                            sum(list(paths.values()), []), prefix='Step_%d-' % step)
-
-                        """ ------------------- Inner Policy Update --------------------"""
-                        if step == self.num_inner_grad_steps:
-                            # In the last inner_grad_step, append inner loop losses of this algo to inner_loop_losses
-                            all_algo_inner_loop_losses.append(
-                                algo_inner_loop_losses)
-
-                        time_inner_step_start = time.time()
-                        if step < self.num_inner_grad_steps:
-                            logger.log("Computing inner policy updates...")
-                            algo_inner_loop_losses, _ = algo._adapt(
-                                samples_data)
+                            true_indices = list(np.take(all_true_indices, theta_tasks)) 
                             
-                            grad_and_vars = optimizer.compute_gradients(algo.loss_list)
+                            print("theta tasks: ", theta_tasks)
+
+                            # Meta-sampler's obtain_samples function now takes as input policy since we need trajectories for each policy
+                            initial_paths = [sampler.obtain_samples(
+                                policy=policy, log=True, log_prefix='Step_%d-' % step) for sampler in self.samplers]
+                            
+                            print("len(initial_paths)", len(initial_paths))
+                            #assert 1 == 2
+                            # get paths no matter step == 0 or 1
+                            paths = OrderedDict()
+                        
+                            
+                            for task_ind in range(self.meta_batch_size):
+                                index = true_indices[task_ind]
+                                if task_ind in theta_tasks:
+                                    paths[task_ind] = initial_paths[index][task_ind]
+                            
+#                             paths = np.take(paths, theta_tasks)
+                            if step == self.num_inner_grad_steps:
+                                algo_samples_reward_data.append(paths)
+
+                            list_sampling_time.append(
+                                time.time() - time_env_sampling_start)
+
+                            """ ----------------- Processing Samples ---------------------"""
+
+                            logger.log("Processing samples...")
+                            time_proc_samples_start = time.time()
+                            samples_data = self.sample_processor.process_samples(
+                                paths, log='all', log_prefix='Step_%d-' % step)
+                            # (number of inner updates, meta_batch_size)
+
+
+                            def calc_path_avg_return(path):
+                                undiscounted_returns = np.mean([sum(rollout["rewards"]) for rollout in path]) # Average returns
+                                return undiscounted_returns
+
+                            if step == self.num_inner_grad_steps:
+                                algo_returns = [calc_path_avg_return(paths[path]) for path in paths]
+                                print("len(algo_returns)", len(algo_returns))
+                                all_algo_inner_loop_returns.append(algo_returns)
+
+                            all_algo_all_samples_data[a_ind].append(samples_data)
+
+                            list_proc_samples_time.append(
+                                time.time() - time_proc_samples_start)
+
+                            self.log_diagnostics(
+                                sum(list(paths.values()), []), prefix='Step_%d-' % step)
+
+                            """ ------------------- Inner Policy Update --------------------"""
+                            if step == self.num_inner_grad_steps:
+                                # In the last inner_grad_step, append inner loop losses of this algo to inner_loop_losses
+                                all_algo_inner_loop_losses.append(
+                                    algo_inner_loop_losses)
+
+                            time_inner_step_start = time.time()
+                            if step < self.num_inner_grad_steps:
+                                logger.log("Computing inner policy updates...")
+                                algo_inner_loop_losses, _, algo_inner_loop_grads = algo._adapt(
+                                    samples_data)
+                                #assert 1 == 2, np.array(algo_inner_loop_grads[0]).shape
+#                                 for grad in algo_inner_loop_grads: 
+#                                     print(grad)
+                                algo_inner_loop_grads = np.array([np.concatenate(list([np.array(value).flatten() for value in d.values()])) for d in algo_inner_loop_grads]) 
+    # np.concatenate([np.array(list(dictionary.values())).flatten() for dictionary in algo_inner_loop_grads])
+                                # assert 1 == 2
+
+
+                            # Normalize gradients 
+                            print("algo_inner_loop_grads: ", algo_inner_loop_grads.shape)
+                            algo_inner_loop_grads =[a / np.linalg.norm(a) for a in algo_inner_loop_grads] 
+
+                                    
+                            if depth_counter < max_depth:
+                                if not p2c[algo]:
+                                    clustering = clusterer.fit(algo_inner_loop_grads) # ?  
+                                    cluster_labels = clustering.labels_
+                                    if max(cluster_labels) > 0:
+                                        number_of_children = max(cluster_labels) + 1
+                                        print(cluster_labels, "NATURE BEGS ME TO CLUSTER") 
+                                        p2c[algo] = [deepcopy(algo) for _ in range(number_of_children)]
+                                        for cluster_ind, child_algo in enumerate(p2c[algo]):
+                                            cluster_grads = algo_inner_loop_grads[np.argwhere(cluster_labels == cluster_ind)]
+                                            cluster_mean = np.squeeze(np.mean(cluster_grads, axis = 1))
+                                            assert len(cluster_mean.shape) == 1
+                                            assert cluster_mean.shape[0] > 1
+                                            theta_vecs[child_algo] = cluster_mean   
+                                            theta_depth[child_algo] = theta_depth[algo] + 1 
+                                            p2c[child_algo] = []
+                                            
+                                if p2c[algo] != []: 
+                                    children_vecs = np.stack([theta_vecs[child] for child in p2c[algo]])
+                                
+                                    similarities = algo_inner_loop_grads.T.dot(children_vecs)
+                                    labels = np.argmax(similarities, axis = 1)
+                                    new_parents = [p2c[algo][label] for label in labels]
+                                    for ind, task_ind in enumerate(theta_tasks):
+                                        task_to_theta[task_ind] = new_parents[ind]
+
+                        
+
+                            print("\n\n\n\n{}, {}\n\n\n\n".format(depth_counter, max_depth))
+                            if depth_counter == max_depth: 
+                                # Do outer loop
+                                
+                                for step in range(self.num_inner_grad_steps+1):
+                                    logger.log('** Step ' + str(step) + ' **')
+
+                                    """ -------------------- Sampling --------------------------"""
+
+                                    logger.log("Obtaining samples...")
+                                    time_env_sampling_start = time.time()
+
+                                    true_indices = list(np.take(all_true_indices, theta_tasks)) 
+
+                                    print("theta tasks: ", theta_tasks)
+
+                                    # Meta-sampler's obtain_samples function now takes as input policy since we need trajectories for each policy
+                                    initial_paths = [sampler.obtain_samples(
+                                        policy=policy, log=True, log_prefix='Step_%d-' % step) for sampler in self.samplers]
+
+                                    print("len(initial_paths)", len(initial_paths))
+                                    #assert 1 == 2
+                                    # get paths no matter step == 0 or 1
+                                    paths = OrderedDict()
+                        
+                            
+                                    for task_ind in range(self.meta_batch_size):
+                                        index = true_indices[task_ind]
+                                        if task_ind in theta_tasks:
+                                            paths[task_ind] = initial_paths[index][task_ind]
+
+                                    if step == self.num_inner_grad_steps:
+                                        algo_samples_reward_data.append(paths)
+
+                                    list_sampling_time.append(
+                                        time.time() - time_env_sampling_start)
+
+                                    """ ----------------- Processing Samples ---------------------"""
+
+                                    logger.log("Processing samples...")
+                                    time_proc_samples_start = time.time()
+                                    samples_data = self.sample_processor.process_samples(
+                                        paths, log='all', log_prefix='Step_%d-' % step)
+                                    # (number of inner updates, meta_batch_size)
+
+
+                                    def calc_path_avg_return(path):
+                                        undiscounted_returns = np.mean([sum(rollout["rewards"]) for rollout in path]) # Average returns
+                                        return undiscounted_returns
+
+                                    if step == self.num_inner_grad_steps:
+                                        algo_returns = [calc_path_avg_return(paths[path]) for path in paths]
+                                        print("len(algo_returns)", len(algo_returns))
+                                        all_algo_inner_loop_returns.append(algo_returns)
+
+                                    all_algo_all_samples_data[a_ind].append(samples_data)
+
+                                    list_proc_samples_time.append(
+                                        time.time() - time_proc_samples_start)
+
+                                    self.log_diagnostics(
+                                        sum(list(paths.values()), []), prefix='Step_%d-' % step)
+
+                                    """ ------------------- Inner Policy Update --------------------"""
+                                    if step == self.num_inner_grad_steps:
+                                        # In the last inner_grad_step, append inner loop losses of this algo to inner_loop_losses
+                                        all_algo_inner_loop_losses.append(
+                                            algo_inner_loop_losses)
+
+                                    time_inner_step_start = time.time()
+                                    if step < self.num_inner_grad_steps:
+                                        logger.log("Computing inner policy updates...")
+                                        algo_inner_loop_losses, _, algo_inner_loop_grads = algo._adapt(
+                                            samples_data)
+
 
                         list_inner_step_time.append(
                             time.time() - time_inner_step_start)
-                    total_inner_time = time.time() - start_total_inner_time
+                total_inner_time = time.time() - start_total_inner_time
+
+
+
+
+
 
                 time_maml_opt_start = time.time()
                 """ ------------------ Outer Policy Update ---------------------"""
@@ -328,9 +470,9 @@ class KAML_Test_Trainer(object):
                 # For each algo, do outer update
                 relevant_paths = OrderedDict()
                 count = 0
-                for a_ind, algo in enumerate(self.algos[:self.theta_count]):
+                for a_ind, algo in enumerate(list(set(task_to_theta))): #enumerate(self.algos):
                     # Get all indices of data from tasks that were assigned to this algo
-                    relevant_data_indices = (which_algo == a_ind)
+                    relevant_data_indices = theta_tasks #(which_algo == a_ind)
                     # print("relevant_data_indices", relevant_data_indices.shape)
                     relevant_data_indices = np.nonzero(
                         relevant_data_indices)[0]
@@ -366,39 +508,39 @@ class KAML_Test_Trainer(object):
                     # print("optimize policy input", new_x.shape)
                     algo.optimize_policy(new_x.T)
 
-                self.sample_processor._helper(relevant_paths, log='reward', log_prefix='Step_2-')
+                    self.sample_processor._helper(relevant_paths, log='reward', log_prefix='Step_2-')
 
-                clustering_score = np.abs(
-                    np.mean(np.abs(true_indices - which_algo)) - 0.5) * 2.0
-                logger.logkv('Clustering Score', clustering_score)
+                    clustering_score = np.abs(
+                        np.mean(np.abs(true_indices - which_algo)) - 0.5) * 2.0
+                    logger.logkv('Clustering Score', clustering_score)
 
-                """ ------------------- Logging Stuff --------------------------"""
-                logger.logkv('Itr', itr)
-                logger.logkv('n_timesteps', [
-                             sampler.total_timesteps_sampled for sampler in self.samplers])
+                    """ ------------------- Logging Stuff --------------------------"""
+                    logger.logkv('Itr', itr)
+                    logger.logkv('n_timesteps', [
+                                 sampler.total_timesteps_sampled for sampler in self.samplers])
 
-                logger.logkv('Time-OuterStep', time.time() -
-                             time_outer_step_start)
-                logger.logkv('Time-TotalInner', total_inner_time)
-                logger.logkv('Time-InnerStep', np.sum(list_inner_step_time))
-                logger.logkv('Time-SampleProc', np.sum(list_proc_samples_time))
-                logger.logkv('Time-Sampling', np.sum(list_sampling_time))
+                    logger.logkv('Time-OuterStep', time.time() -
+                                 time_outer_step_start)
+                    logger.logkv('Time-TotalInner', total_inner_time)
+                    logger.logkv('Time-InnerStep', np.sum(list_inner_step_time))
+                    logger.logkv('Time-SampleProc', np.sum(list_proc_samples_time))
+                    logger.logkv('Time-Sampling', np.sum(list_sampling_time))
 
-                logger.logkv('Time', time.time() - start_time)
-                logger.logkv('ItrTime', time.time() - itr_start_time)
-                logger.logkv('Time-MAMLSteps', time.time() -
-                             time_maml_opt_start)
+                    logger.logkv('Time', time.time() - start_time)
+                    logger.logkv('ItrTime', time.time() - itr_start_time)
+                    logger.logkv('Time-MAMLSteps', time.time() -
+                                 time_maml_opt_start)
 
-                logger.log("Saving snapshot...")
-                params = self.get_itr_snapshot(itr)
-                if itr % 25 == 0:
-                    print("Saving model...")
-#                     self.saver.save(sess, './MultiMaml_{}_PhiTest_{}_Iteration_{}'.format(multi_maml, phi_test, itr))
-                    self.saver.save(sess, './{}_Iteration_{}'.format("_".join(self.mode_name.split()), itr))
-                logger.save_itr_params(itr, params)
-                logger.log("Saved")
+                    logger.log("Saving snapshot...")
+                    params = self.get_itr_snapshot(itr)
+                    if itr % 25 == 0:
+                        print("Saving model...")
+    #                     self.saver.save(sess, './MultiMaml_{}_PhiTest_{}_Iteration_{}'.format(multi_maml, phi_test, itr))
+                        self.saver.save(sess, './{}_Iteration_{}'.format("_".join(self.mode_name.split()), itr))
+                    logger.save_itr_params(itr, params)
+                    logger.log("Saved")
 
-                logger.dumpkvs()
+                    logger.dumpkvs()
 
         logger.log("Training finished")
         self.sess.close()

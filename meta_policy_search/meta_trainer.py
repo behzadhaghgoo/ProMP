@@ -469,7 +469,7 @@ class KAML_Test_Trainer(object):
                         time_inner_step_start = time.time()
                         if step < self.num_inner_grad_steps:
                             logger.log("Computing inner policy updates...")
-                            algo_inner_loop_losses, _ = algo._adapt(
+                            algo_inner_loop_losses, _, algo_inner_loop_grads = algo._adapt(
                                 samples_data)
 
                         list_inner_step_time.append(
