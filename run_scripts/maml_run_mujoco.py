@@ -23,8 +23,9 @@ modes = ["MAML on two envs",
          "KAML with phi initialization", 
          "KAML with late theta initialization"]
     
-mode = "KAML with late theta initialization"
-
+mode = "MAML on two envs"
+print("using mode: ", mode)
+hidden_sizes = (64,64)
 
 meta_policy_search_path = '/'.join(os.path.realpath(
     os.path.dirname(__file__)).split('/')[:-1])
@@ -131,7 +132,7 @@ if __name__ == "__main__":
     else:  # use default config
         if mode == "MAML on two envs":
             config = {
-                'seed': 1,
+                'seed': 2,
 
                 'baseline': 'LinearFeatureBaseline',
 
@@ -149,7 +150,7 @@ if __name__ == "__main__":
                 'normalize_adv': True,
 
                 # policy config
-                'hidden_sizes': (64, 64),
+                'hidden_sizes': hidden_sizes,
                 'learn_std': True,  # whether to learn the standard deviation of the gaussian policy
 
                 # E-MAML config
@@ -177,7 +178,7 @@ if __name__ == "__main__":
             
         elif mode == "KAML with no initialization":
             config = {
-                'seed': 1,
+                'seed': 2,
 
                 'baseline': 'LinearFeatureBaseline',
 
@@ -195,7 +196,7 @@ if __name__ == "__main__":
                 'normalize_adv': True,
 
                 # policy config
-                'hidden_sizes': (64, 64),
+                'hidden_sizes': hidden_sizes,
                 'learn_std': True,  # whether to learn the standard deviation of the gaussian policy
 
                 # E-MAML config
@@ -209,7 +210,7 @@ if __name__ == "__main__":
 
                 'multi_maml': True,
                 'phi_test': False,
-                'switch_thresh': 2,
+                'switch_thresh': 0,
                 'num_clusters_upper_lim': 2,
                 'mode_name': str(mode),
             }
@@ -222,7 +223,7 @@ if __name__ == "__main__":
             
         elif mode == "KAML with phi initialization":
             config = {
-                'seed': 1,
+                'seed': 2,
 
                 'baseline': 'LinearFeatureBaseline',
 
@@ -240,7 +241,7 @@ if __name__ == "__main__":
                 'normalize_adv': True,
 
                 # policy config
-                'hidden_sizes': (64, 64),
+                'hidden_sizes': hidden_sizes,
                 'learn_std': True,  # whether to learn the standard deviation of the gaussian policy
 
                 # E-MAML config
@@ -267,7 +268,7 @@ if __name__ == "__main__":
         # Basically MultiMAML
         elif mode == "KAML with late theta initialization":
             config = {
-                'seed': 1,
+                'seed': 2,
 
                 'baseline': 'LinearFeatureBaseline',
 
@@ -285,7 +286,7 @@ if __name__ == "__main__":
                 'normalize_adv': True,
 
                 # policy config
-                'hidden_sizes': (64, 64),
+                'hidden_sizes': hidden_sizes,
                 'learn_std': True,  # whether to learn the standard deviation of the gaussian policy
 
                 # E-MAML config

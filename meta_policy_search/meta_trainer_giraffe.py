@@ -200,14 +200,21 @@ class KAML_Test_Trainer(object):
                 # For each theta in thetas, we obtain trajectories from the same tasks from both environments
                 algo_samples_reward_data = []
                 
+                # new 
+                first_theta = self.algos[0]
+                current_thetas = [] 
+                thetas = {}
+                task_to_theta = [first_theta for _ in range(self.meta_batch_size)]
                 
-
-                for a_ind, algo in enumerate(self.algos[:self.theta_count]):
+                for a_ind, algo in enumerate(current_thetas):
                     # algo_inner_loop_losses = []
                     # algo_all_samples_data = []
-
+                    
                     policy = algo.policy
                     policy.switch_to_pre_update()  # Switch to pre-update policy
+                    
+                    # tasks for this theta 
+                    theta_tasks = np.argwhere(task_to_theta == algo) 
 
                     # all_samples_data, all_paths, algo_all_samples = [], [], []
                     list_sampling_time, list_inner_step_time, list_outer_step_time, list_proc_samples_time = [], [], [], []
@@ -224,7 +231,7 @@ class KAML_Test_Trainer(object):
 
                         # Meta-sampler's obtain_samples function now takes as input policy since we need trajectories for each policy
                         initial_paths = [sampler.obtain_samples(
-                            policy=policy, log=True, log_prefix='Step_%d-' % step) for sampler in self.samplers]
+                            policy=policy, log=True, log_prefix='Step_%d-' % step) for sampler in self.samplers][theta_tasks]
 
                         # get paths no matter step == 0 or 1
                         paths = OrderedDict()
@@ -248,26 +255,13 @@ class KAML_Test_Trainer(object):
 
                         
                         def calc_path_avg_return(path):
-#                             average_discounted_return = np.mean(
-#                                 [path["returns"][0] for path in paths])
-#                             print("paths[0]", paths[0])
-#                             print('path["rewards"]', paths[0][0]["rewards"])
-#                             print("len(path)", len(path))
-#                             print("len(rollout)",len(path[0]))
-#                             print("len(rollout)['rewards']",path[0]["rewards"])
-        
                             undiscounted_returns = np.mean([sum(rollout["rewards"]) for rollout in path]) # Average returns
                             return undiscounted_returns
                         
                         if step == self.num_inner_grad_steps:
-#                             print("path['returns']", paths[0]["returns"])
-#                             print("len(paths)", len(paths))
-#                             for i, path in enumerate(paths):
-#                                 print("path {} = {}".format(i, path))
                             algo_returns = [calc_path_avg_return(paths[path]) for path in paths]
                             print("len(algo_returns)", len(algo_returns))
                             all_algo_inner_loop_returns.append(algo_returns)
-
 
                         all_algo_all_samples_data[a_ind].append(samples_data)
 
@@ -288,6 +282,8 @@ class KAML_Test_Trainer(object):
                             logger.log("Computing inner policy updates...")
                             algo_inner_loop_losses, _ = algo._adapt(
                                 samples_data)
+                            
+                            grad_and_vars = optimizer.compute_gradients(algo.loss_list)
 
                         list_inner_step_time.append(
                             time.time() - time_inner_step_start)
