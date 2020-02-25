@@ -97,7 +97,7 @@ class MAMLAlgo(MetaAlgo):
         trainable_inner_step_size (boolean): whether make the inner step size a trainable variable
     """
 
-    def __init__(self, policy, inner_lr=0.1, meta_batch_size=20, num_inner_grad_steps=1, trainable_inner_step_size=False):
+    def __init__(self, policy, inner_lr=0.1, meta_batch_size=20, num_inner_grad_steps=1, trainable_inner_step_size=False, scope=None):
         super(MAMLAlgo, self).__init__(policy)
 
         assert type(num_inner_grad_steps) and num_inner_grad_steps >= 0
@@ -115,6 +115,7 @@ class MAMLAlgo(MetaAlgo):
         self.grads_list = None 
         self.adapted_policies_params = None
         self.step_sizes = None
+        self.scope = scope 
 
     def _make_input_placeholders(self, prefix=''):
         """
@@ -188,8 +189,8 @@ class MAMLAlgo(MetaAlgo):
         grads_list = [] 
 
         for i in range(self.meta_batch_size):
-            with tf.variable_scope("adapt_task_%i" % i):
-                with tf.variable_scope("adapt_objective"):
+            with tf.variable_scope("%s_adapt_task_%i" % (self.scope, i)):
+                with tf.variable_scope("%s_adapt_objective" % self.scope):
                     distribution_info_new = self.policy.distribution_info_sym(obs_phs[i],
                                                                               params=self.policy.policies_params_phs[i])
 
@@ -198,7 +199,7 @@ class MAMLAlgo(MetaAlgo):
                                                                dist_info_old_phs[i], distribution_info_new)
 
                 # get tf operation for adapted (post-update) policy
-                with tf.variable_scope("adapt_step"):
+                with tf.variable_scope("%s_adapt_step" % self.scope): # not sure 
                     adapted_policy_param, gradients = self._adapt_sym( # might compute gradients here 
                         surr_obj_adapt, self.policy.policies_params_phs[i])
                 adapted_policies_params.append(adapted_policy_param)
@@ -343,7 +344,7 @@ class MAMLAlgo(MetaAlgo):
 
     def _create_step_size_vars(self):
         # Step sizes
-        with tf.variable_scope('inner_step_sizes'):
+        with tf.variable_scope('%s_inner_step_sizes' % self.scope):
             step_sizes = dict()
             for key, param in self.policy.policy_params.items():
                 shape = param.get_shape().as_list()

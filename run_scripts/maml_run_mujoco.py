@@ -21,9 +21,10 @@ modes = ["MAML on two envs",
          "MultiMAML", 
          "KAML with no initialization", 
          "KAML with phi initialization", 
-         "KAML with late theta initialization"]
+         "KAML with late theta initialization",
+         "hierarchical KAML"]
     
-mode = "MAML on two envs"
+mode = "hierarchical KAML"
 print("using mode: ", mode)
 hidden_sizes = (64,64)
 
@@ -44,6 +45,9 @@ def main(config):
     max_obs_dim = np.max([env.observation_space.shape[0] for env in envs])
 
     num_clusters_upper_lim = config['num_clusters_upper_lim'] #len(envs)
+    
+    config['max_action_dim'] = max_action_dim
+    config['max_obs_dim'] = max_obs_dim 
 
     # Create a policy for each theta.
     policies = [MetaGaussianMLPPolicy(
@@ -87,6 +91,7 @@ def main(config):
             meta_batch_size=config['meta_batch_size'],
             num_inner_grad_steps=config['num_inner_grad_steps'],
             exploration=False,
+            scope=str(i), # assumes only one theta 
         ))
         print("\n\nalgorithm {} created.\n\n".format(i))
         
@@ -105,6 +110,7 @@ def main(config):
         phi_test = config['phi_test'],
         switch_thresh = config['switch_thresh'],
         mode_name = config['mode_name'],
+        config=config, 
     )
     print("start training")
     trainer.train()
@@ -176,6 +182,51 @@ if __name__ == "__main__":
             assert config['phi_test'] == False
             
             
+        elif mode == "hierarchical KAML":
+            config = {
+                'seed': 2,
+
+                'baseline': 'LinearFeatureBaseline',
+
+                'env': ['AntRandDirecEnv', 'HalfCheetahRandDirecEnv'],
+                'probs': [0.5, 0.5],
+
+                # sampler config
+                'rollouts_per_meta_task': 20,
+                'max_path_length': 100,
+                'parallel': True,
+
+                # sample processor config
+                'discount': 0.99,
+                'gae_lambda': 1,
+                'normalize_adv': True,
+
+                # policy config
+                'hidden_sizes': hidden_sizes,
+                'learn_std': True,  # whether to learn the standard deviation of the gaussian policy
+
+                # E-MAML config
+                'inner_lr': 0.1,  # adaptation step size
+                'learning_rate': 1e-3,  # meta-policy gradient step size
+                'step_size': 0.01,  # size of the TRPO trust-region
+                'n_itr': 1001,  # number of overall training iterations
+                'meta_batch_size': 40,  # number of sampled meta-tasks per iterations
+                'num_inner_grad_steps': 1,  # number of inner / adaptation gradient steps
+                'inner_type': 'log_likelihood',  # type of inner loss function used
+
+                'multi_maml': False,
+                'phi_test': False,
+                'switch_thresh': 1000,
+                'num_clusters_upper_lim': 3,
+                'mode_name': str(mode),
+
+            }
+            assert len(config['probs']) == 2
+            assert len(config['env']) == 2
+            assert config['num_clusters_upper_lim'] == 3
+            assert config['multi_maml'] == False
+            assert config['phi_test'] == False
+        
         elif mode == "KAML with no initialization":
             config = {
                 'seed': 2,
