@@ -344,6 +344,7 @@ class KAML_Test_Trainer(object):
                                             for _ in range(number_of_children):
                                                 print("Creating a child algo with theta number: {}".format(num_thetas_used + 1))
                                                 new_child_algo = self.algos[num_thetas_used + 1]
+                                                new_child_algo.policy.switch_to_pre_update() 
     #                                             policy = MetaGaussianMLPPolicy(
     #                                                 name="meta-policy-child-{}".format(_),
     #                                                 obs_dim=config['max_obs_dim'],
