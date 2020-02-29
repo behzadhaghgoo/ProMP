@@ -303,38 +303,48 @@ class KAML_Test_Trainer(object):
                     print(cluster_labels, "\n\n\n\n\n\n\nNOT CLUSTERING\n\n\n\n\n\n\n")
                     if max(cluster_labels) > 0:
                         number_of_children = max(cluster_labels) + 1
-                        print(cluster_labels, "\n\n\n\n\n\n\nCLUSTERING\n\n\n\n\n\n\n")
+                        print(cluster_labels, "\n\n\n\n\n\n\n{} Clusters".format(number_of_children))
                         children_algos = []
                         # sess = tf.InteractiveSession()
-                        print(num_thetas_used + 1 < len(self.algos))
+                        print("num_thetas_used = {}, len(self.algos) = {}".format(num_thetas_used, len(self.algos)))
 
+                        
+                        if number_of_children <= len(self.algos) - num_thetas_used:
+                            
                         # Create children
-                        for _ in range(number_of_children):
-                            if num_thetas_used + 1 < len(self.algos):
-                                print("Creating a child algo with theta number: {}".format(num_thetas_used + 1))
-                                print("length of self.algos: {}".format(len(self.algos)))
-                                new_child_algo = self.algos[num_thetas_used + 1]
-                                new_child_algo.policy.switch_to_pre_update() 
-                                num_thetas_used += 1
-                                parent_algo_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=algo.scope)
-                                child_algo_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=new_child_algo.scope)
-                                op_list = []
-                                for t, q in zip(child_algo_vars, parent_algo_vars):
-                                    op_list.append(t.assign(q))
+                            for _ in range(number_of_children):
+                                print(cluster_labels, "CLUSTERING\n\n\n\n\n\n\n")
+                                if num_thetas_used + 1 < len(self.algos):
+                                    print("Creating a child algo with theta number: {}".format(num_thetas_used + 1))
+                                    
+                                    new_child_algo = self.algos[num_thetas_used + 1]
+                                    new_child_algo.policy.switch_to_pre_update() 
+                                    num_thetas_used += 1
+                                    parent_algo_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=algo.scope)
+                                    child_algo_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=new_child_algo.scope)
+                                    op_list = []
+                                    for t, q in zip(child_algo_vars, parent_algo_vars):
+                                        op_list.append(t.assign(q))
 
-                                update_target_op = tf.group(*op_list)
-                                sess.run(update_target_op)
-
-
-                        children[algo] = children_algos #[pickle.loads(pickle.dumps(algo, -1)) for _ in range(number_of_children)]
-                        for cluster_ind, child_algo in enumerate(children[algo]):
-                            cluster_grads = algo_inner_loop_grads[np.argwhere(cluster_labels == cluster_ind)]
-                            cluster_mean = np.squeeze(np.mean(cluster_grads, axis = 1))
-                            assert len(cluster_mean.shape) == 1
-                            assert cluster_mean.shape[0] > 1
-                            theta_vecs[child_algo] = cluster_mean
-                            theta_depth[child_algo] = theta_depth[algo] + 1
-                            children[child_algo] = []
+                                    update_target_op = tf.group(*op_list)
+                                    sess.run(update_target_op)
+    
+    
+    
+                            print("task_thetas before: {}".format(task_thetas))
+                            for i, ind in enumerate(theta_tasks):
+                                task_thetas[ind] = num_thetas_used + cluster_labels[i]
+                            print("task_thetas after: {}".format(task_thetas))
+                        
+                            children[algo_ind] = children_algos #[pickle.loads(pickle.dumps(algo, -1)) for _ in range(number_of_children)]
+                            for cluster_ind, child_algo in enumerate(children[algo_ind]):
+                                cluster_grads = algo_inner_loop_grads[np.argwhere(cluster_labels == cluster_ind)]
+                                cluster_mean = np.squeeze(np.mean(cluster_grads, axis = 1))
+                                assert len(cluster_mean.shape) == 1
+                                assert cluster_mean.shape[0] > 1
+                                theta_vecs[child_algo] = cluster_mean
+                                theta_depth[child_algo] = theta_depth[algo_ind] + 1
+                                children[child_algo] = []
 
                 print("DOING OUTER LOOP")
 
@@ -359,10 +369,13 @@ class KAML_Test_Trainer(object):
                         logger.log("Obtaining samples...")
                         time_env_sampling_start = time.time()
 
+                        theta_task_inds = arg_where(task_thetas, algo_ind) 
                         true_indices = list(np.take(all_true_indices, theta_task_inds))
-
-                        print("theta tasks: ", theta_task_inds)
-
+                        
+                        print("algo_ind: {}, theta tasks: {}".format(algo_ind, theta_task_inds)) 
+                        if theta_task_inds == []:
+                            print("theta_task_inds = []")
+                            continue
                         # Meta-sampler's obtain_samples function now takes as input policy since we need trajectories for each policy
                         initial_paths = [sampler.obtain_samples(
                             policy=policy, log=True, log_prefix='Step_%d-' % step) for sampler in self.samplers]
@@ -372,10 +385,9 @@ class KAML_Test_Trainer(object):
                         # get paths no matter step == 0 or 1
                         paths = OrderedDict()
 
-                        for task_ind in range(self.meta_batch_size):
+                        for task_ind in theta_task_inds:
                             index = true_indices[task_ind]
-                            if task_ind in theta_task_inds:
-                                paths[task_ind] = initial_paths[index][task_ind]
+                            paths[task_ind] = initial_paths[index][task_ind]
 
                         if step == self.num_inner_grad_steps:
                             algo_samples_reward_data.append(paths)
@@ -460,11 +472,14 @@ class KAML_Test_Trainer(object):
                 relevant_paths = OrderedDict()
                 count = 0
                 print("task thetas now: ", list(set(task_thetas)))
-                for algo_ind, algo in enumerate(list(set(task_thetas))): #enumerate(self.algos):
+                for algo_ind, algo in enumerate(self.algos):
                     # Get all indices of data from tasks that were assigned to this algo
+                    
+                    if algo_ind not in task_thetas:
+                        continue 
 
-                    print("arg_where(task_thetas, algo)", arg_where(task_thetas, algo))
-                    theta_task_inds = arg_where(task_thetas, algo)
+                    print("arg_where(task_thetas, algo)", arg_where(task_thetas, algo_ind))
+                    theta_task_inds = arg_where(task_thetas, algo_ind)
                     # print("which_algo = {}, theta_task_inds = {}".format(which_algo, theta_task_inds))
                     relevant_datalgo_indices = theta_task_inds #(which_algo == algo_ind)
                     # print("relevant_datalgo_indices", relevant_datalgo_indices.shape)
@@ -482,9 +497,8 @@ class KAML_Test_Trainer(object):
                         print("len(all_algo_all_samples_data[0])", len(all_algo_all_samples_data[i]))
                     # Fill the batch to make the shape right.
                     
-                    all_algo_all_samples_data = np.array(all_algo_all_samples_data)
 
-                    x = (all_algo_all_samples_data[algo_ind, :, list(relevant_datalgo_indices)])  # 21 x 2
+                    x = (np.array(all_algo_all_samples_data[algo_ind])[:, list(relevant_datalgo_indices)])  # 21 x 2
 
                     path_list = algo_samples_reward_data[algo_ind]
 
@@ -507,7 +521,7 @@ class KAML_Test_Trainer(object):
                     np.random.shuffle(new_x)
 
                     # print("optimize policy input", new_x.shape)
-                    self.algos[algo].optimize_policy(new_x.T)
+                    self.algos[algo_ind].optimize_policy(new_x.T)
 
                     self.sample_processor._helper(relevant_paths, log='reward', log_prefix='Step_2-')
 
