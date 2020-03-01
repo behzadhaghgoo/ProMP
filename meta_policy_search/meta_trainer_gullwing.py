@@ -206,7 +206,6 @@ class KAML_Test_Trainer(object):
 
                 """self.algos is the global list of algos and every algo is denoted by its index there."""
                 # new
-                # first_theta = self.algos[0]
                 first_theta = 0
                 # thetas = {}
                 # theta_vecs = {first_theta:}
@@ -332,7 +331,7 @@ class KAML_Test_Trainer(object):
     
     
                             print("task_thetas before: {}".format(task_thetas))
-                            for i, ind in enumerate(theta_tasks):
+                            for i, ind in enumerate(theta_task_inds):
                                 task_thetas[ind] = num_thetas_used + cluster_labels[i]
                             print("task_thetas after: {}".format(task_thetas))
                         
@@ -346,8 +345,17 @@ class KAML_Test_Trainer(object):
                                 theta_depth[child_algo] = theta_depth[algo_ind] + 1
                                 children[child_algo] = []
 
+                                
+                ##################################################                
+                ##################################################
+                ##################################################
                 print("DOING OUTER LOOP")
+                ##################################################
+                ##################################################
+                ##################################################
 
+                
+                
                 all_algo_all_samples_data = [[]
                                              for _ in range(self.theta_count)]
                 # shape : num_algos, num_tasks
@@ -416,9 +424,6 @@ class KAML_Test_Trainer(object):
 
                         all_algo_all_samples_data[algo_ind].append(samples_data)
 
-                        # list_proc_samples_time.append(
-                        #     time.time() - time_proc_samples_start)
-
                         self.log_diagnostics(
                             sum(list(paths.values()), []), prefix='Step_%d-' % step)
 
@@ -446,27 +451,9 @@ class KAML_Test_Trainer(object):
 
                         time_outer_step_start = time.time()
 
-                        # all_algo_all_samples_data = np.array(all_algo_all_samples_data)
-                        # all_algo_inner_loop_losses = np.array(
-                        #     all_algo_inner_loop_losses)
                         true_indices = np.array(true_indices)
 
-#                         if do_it_with_return_please:
-#                             print("wise choice")
-#                             if (multi_maml or phi_test) and itr < switch_thresh:
-#                                 which_algo = true_indices
-#                             else:
-#                                 which_algo = np.argmax(
-#                                     all_algo_inner_loop_returns, axis=0)  # length num_tasks
-#                         else:
-#                             print("think twice")
-#                             if (multi_maml or phi_test) and itr < switch_thresh:
-#                                 which_algo = true_indices
-#                             else:
-#                                 which_algo = np.argmin(
-#                                     all_algo_inner_loop_losses, axis=0)  # length num_tasks
 
-#                         # print("which_algo shape: ", which_algo.shape)
 
                 # For each algo, do outer update
                 relevant_paths = OrderedDict()
@@ -480,24 +467,15 @@ class KAML_Test_Trainer(object):
 
                     print("arg_where(task_thetas, algo)", arg_where(task_thetas, algo_ind))
                     theta_task_inds = arg_where(task_thetas, algo_ind)
-                    # print("which_algo = {}, theta_task_inds = {}".format(which_algo, theta_task_inds))
-                    relevant_datalgo_indices = theta_task_inds #(which_algo == algo_ind)
-                    # print("relevant_datalgo_indices", relevant_datalgo_indices.shape)
-                    relevant_datalgo_indices = np.nonzero(
-                        relevant_datalgo_indices)[0]
-                    # print("relevant_datalgo_indices", relevant_datalgo_indices.shape)
-                    print(
-                        "all_algo_all_samples_data[algo_ind, :, relevant_datalgo_indices]")
-
+                    relevant_datalgo_indices = theta_task_inds
+                    print("all_algo_all_samples_data[algo_ind, :, relevant_datalgo_indices]")
                     print("np.array(all_algo_all_samples_data).shape", np.array(all_algo_all_samples_data).shape)
 
                     # print("all_algo_all_samples_data.shape", all_algo_all_samples_data.shape)
                     for i in range(len(all_algo_all_samples_data)):
-                        
                         print("len(all_algo_all_samples_data[0])", len(all_algo_all_samples_data[i]))
-                    # Fill the batch to make the shape right.
                     
-
+                    # Fill the batch to make the shape right.
                     x = (np.array(all_algo_all_samples_data[algo_ind])[:, list(relevant_datalgo_indices)])  # 21 x 2
 
                     path_list = algo_samples_reward_data[algo_ind]
@@ -521,7 +499,7 @@ class KAML_Test_Trainer(object):
                     np.random.shuffle(new_x)
 
                     # print("optimize policy input", new_x.shape)
-                    self.algos[algo_ind].optimize_policy(new_x.T)
+                    algo.optimize_policy(new_x.T)
 
                     self.sample_processor._helper(relevant_paths, log='reward', log_prefix='Step_2-')
 
