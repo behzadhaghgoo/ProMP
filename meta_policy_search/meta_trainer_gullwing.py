@@ -119,7 +119,7 @@ class KAML_Test_Trainer(object):
             sess = tf.Session()
         self.sess = sess
 
-        self.clusterer = DBSCAN(eps=0.1, min_samples=1)
+        # self.clusterer = DBSCAN(eps=0.1, min_samples=1)
 
         self.timer = Timer()
 
@@ -297,6 +297,8 @@ class KAML_Test_Trainer(object):
                     if algo_ind not in task_thetas:
                         continue
 
+                    theta_task_inds = arg_where(task_thetas, algo_ind)
+                    
                     clustering = clusterer.fit(algos_grads[algo_ind])
                     cluster_labels = clustering.labels_
                     print(cluster_labels, "\n\n\n\n\n\n\nNOT CLUSTERING\n\n\n\n\n\n\n")
@@ -318,7 +320,7 @@ class KAML_Test_Trainer(object):
                                     
                                     new_child_algo = self.algos[num_thetas_used + 1]
                                     new_child_algo.policy.switch_to_pre_update() 
-                                    num_thetas_used += 1
+                                    # num_thetas_used += 1
                                     parent_algo_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=algo.scope)
                                     child_algo_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=new_child_algo.scope)
                                     op_list = []
@@ -327,6 +329,8 @@ class KAML_Test_Trainer(object):
 
                                     update_target_op = tf.group(*op_list)
                                     sess.run(update_target_op)
+                                    
+                                    children_algos.append(num_thetas_used + 1)
     
     
     
@@ -334,10 +338,13 @@ class KAML_Test_Trainer(object):
                             for i, ind in enumerate(theta_task_inds):
                                 task_thetas[ind] = num_thetas_used + cluster_labels[i]
                             print("task_thetas after: {}".format(task_thetas))
+                            # Increment number of thetas used by the number of children created 
+                            num_thetas_used = num_thetas_used + number_of_children 
                         
                             children[algo_ind] = children_algos #[pickle.loads(pickle.dumps(algo, -1)) for _ in range(number_of_children)]
                             for cluster_ind, child_algo in enumerate(children[algo_ind]):
-                                cluster_grads = algo_inner_loop_grads[np.argwhere(cluster_labels == cluster_ind)]
+                                #  cluster_grads = algo_inner_loop_grads[np.argwhere(cluster_labels == cluster_ind)]
+                                cluster_grads = list(np.take(algo_inner_loop_grads, arg_where(cluster_labels, cluster_ind)))
                                 cluster_mean = np.squeeze(np.mean(cluster_grads, axis = 1))
                                 assert len(cluster_mean.shape) == 1
                                 assert cluster_mean.shape[0] > 1
@@ -349,7 +356,7 @@ class KAML_Test_Trainer(object):
                 ##################################################                
                 ##################################################
                 ##################################################
-                print("DOING OUTER LOOP")
+                print("DOING MAML")
                 ##################################################
                 ##################################################
                 ##################################################
@@ -368,6 +375,7 @@ class KAML_Test_Trainer(object):
                 for algo_ind, algo in enumerate(self.algos): 
                     
                     policy = algo.policy 
+                    policy.switch_to_pre_update() 
                     
                     for step in range(self.num_inner_grad_steps+1):
                         logger.log('** Step ' + str(step) + ' **')
@@ -445,13 +453,13 @@ class KAML_Test_Trainer(object):
                         total_inner_time = time.time() - start_total_inner_time
 
                         time_maml_opt_start = time.time()
-                        """------------------ Outer Policy Update ---------------------"""
+                """------------------ Outer Policy Update ---------------------"""
 
-                        logger.log("Optimizing policy...")
+                logger.log("Optimizing policy...")
 
-                        time_outer_step_start = time.time()
+                time_outer_step_start = time.time()
 
-                        true_indices = np.array(true_indices)
+                true_indices = np.array(true_indices)
 
 
 
@@ -479,7 +487,7 @@ class KAML_Test_Trainer(object):
                     x = (np.array(all_algo_all_samples_data[algo_ind])[:, list(relevant_datalgo_indices)])  # 21 x 2
 
                     path_list = algo_samples_reward_data[algo_ind]
-
+                    assert set(path_list.keys()) == set(relevant_datalgo_indices), path_list.keys() 
                     for index in relevant_datalgo_indices:
                         path = path_list[index]
                         relevant_paths[count] = path
@@ -501,39 +509,39 @@ class KAML_Test_Trainer(object):
                     # print("optimize policy input", new_x.shape)
                     algo.optimize_policy(new_x.T)
 
-                    self.sample_processor._helper(relevant_paths, log='reward', log_prefix='Step_2-')
+                self.sample_processor._helper(relevant_paths, log='reward', log_prefix='Step_2-')
 
 #                             clustering_score = np.abs(
 #                                 np.mean(np.abs(true_indices - which_algo)) - 0.5) * 2.0
-                    # logger.logkv('Clustering Score', clustering_score)
+                # logger.logkv('Clustering Score', clustering_score)
 
-                    """------------------- Logging Stuff --------------------------"""
-                    logger.logkv('Itr', itr)
-                    logger.logkv('n_timesteps', [
-                                 sampler.total_timesteps_sampled for sampler in self.samplers])
+                """------------------- Logging Stuff --------------------------"""
+                logger.logkv('Itr', itr)
+                logger.logkv('n_timesteps', [
+                             sampler.total_timesteps_sampled for sampler in self.samplers])
 
-                    logger.logkv('Time-OuterStep', time.time() -
-                                 time_outer_step_start)
-                    logger.logkv('Time-TotalInner', total_inner_time)
-                    logger.logkv('Time-InnerStep', np.sum(list_inner_step_time))
-                    # logger.logkv('Time-SampleProc', np.sum(list_proc_samples_time))
-                    # logger.logkv('Time-Sampling', np.sum(list_sampling_time))
+                logger.logkv('Time-OuterStep', time.time() -
+                             time_outer_step_start)
+                logger.logkv('Time-TotalInner', total_inner_time)
+                logger.logkv('Time-InnerStep', np.sum(list_inner_step_time))
+                # logger.logkv('Time-SampleProc', np.sum(list_proc_samples_time))
+                # logger.logkv('Time-Sampling', np.sum(list_sampling_time))
 
-                    logger.logkv('Time', time.time() - start_time)
-                    logger.logkv('ItrTime', time.time() - itr_start_time)
-                    logger.logkv('Time-MAMLSteps', time.time() -
-                                 time_maml_opt_start)
+                logger.logkv('Time', time.time() - start_time)
+                logger.logkv('ItrTime', time.time() - itr_start_time)
+                logger.logkv('Time-MAMLSteps', time.time() -
+                             time_maml_opt_start)
 
-                    logger.log("Saving snapshot...")
-                    params = self.get_itr_snapshot(itr)
-                    if itr % 25 == 0:
-                        print("Saving model...")
-    #                     self.saver.save(sess, './MultiMaml_{}_PhiTest_{}_Iteration_{}'.format(multi_maml, phi_test, itr))
-                        self.saver.save(sess, './{}_Iteration_{}'.format("_".join(self.mode_name.split()), itr))
-                    logger.save_itr_params(itr, params)
-                    logger.log("Saved")
+                logger.log("Saving snapshot...")
+                params = self.get_itr_snapshot(itr)
+                if itr % 25 == 0:
+                    print("Saving model...")
+#                     self.saver.save(sess, './MultiMaml_{}_PhiTest_{}_Iteration_{}'.format(multi_maml, phi_test, itr))
+                    self.saver.save(sess, './{}_Iteration_{}'.format("_".join(self.mode_name.split()), itr))
+                logger.save_itr_params(itr, params)
+                logger.log("Saved")
 
-                    logger.dumpkvs()
+                logger.dumpkvs()
 
         logger.log("Training finished")
         self.sess.close()
