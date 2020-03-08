@@ -199,6 +199,7 @@ class TRPOMAML(MAMLAlgo):
         self.optimizer.optimize(meta_op_input_dict)
         logger.log("Computing loss after")
         loss_after = self.optimizer.loss(meta_op_input_dict)
+        gradients = self.optimizer.gradient(meta_op_input_dict)
 
         logger.log("Computing KL after")
         mean_kl = self.optimizer.constraint_val(meta_op_input_dict)
@@ -210,3 +211,43 @@ class TRPOMAML(MAMLAlgo):
             logger.logkv('LossBefore', loss_before)
             logger.logkv('LossAfter', loss_after)
             logger.logkv('dLoss', loss_before - loss_after)
+            
+        return gradients 
+    
+    def compute_outer_gradients(self, all_samples_data, log=True):
+        """
+        Performs MAML outer step
+
+        Args:
+            all_samples_data (list) : list of lists of lists of samples (each is a dict) split by gradient update and
+             meta task
+            log (bool) : whether to log statistics
+
+        Returns:
+            None
+        """
+        meta_op_input_dict = self._extract_input_dict_meta_op(
+            all_samples_data, self._optimization_keys)
+        logger.log("Computing KL before")
+        mean_kl_before = self.optimizer.constraint_val(meta_op_input_dict)
+
+        logger.log("Computing loss before")
+        loss_before = self.optimizer.loss(meta_op_input_dict)
+        logger.log("Optimizing")
+        self.optimizer.compute_gradients(meta_op_input_dict)
+        logger.log("Computing loss after")
+        loss_after = self.optimizer.loss(meta_op_input_dict)
+        gradients = self.optimizer.gradient(meta_op_input_dict)
+
+        logger.log("Computing KL after")
+        mean_kl = self.optimizer.constraint_val(meta_op_input_dict)
+
+        if log:
+            logger.logkv('MeanKLBefore', mean_kl_before)
+            logger.logkv('MeanKL', mean_kl)
+
+            logger.logkv('LossBefore', loss_before)
+            logger.logkv('LossAfter', loss_after)
+            logger.logkv('dLoss', loss_before - loss_after)
+            
+        return gradients 

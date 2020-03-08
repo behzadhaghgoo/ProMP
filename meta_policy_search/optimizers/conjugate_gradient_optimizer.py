@@ -243,6 +243,29 @@ class ConjugateGradientOptimizer(Optimizer):
         feed_dict = self.create_feed_dict(input_val_dict)
         gradient = sess.run(self._gradient, feed_dict)
         return gradient
+    
+    def compute_gradient(self, input_val_dict):
+        """
+        Carries out the optimization step
+
+        Args:
+            inputs (list): inputs for the optimization
+            extra_inputs (list): extra inputs for the optimization
+            subsample_grouped_inputs (None or list): subsample data from each element of the list
+
+        """
+        logger.log("Start CG optimization")
+
+        logger.log("computing loss before")
+        loss_before = self.loss(input_val_dict)
+
+        logger.log("performing update")
+
+        logger.log("computing gradient")
+        gradient = self.gradient(input_val_dict)
+        logger.log("gradient computed")
+
+
 
     def optimize(self, input_val_dict):
         """

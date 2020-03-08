@@ -184,7 +184,7 @@ if __name__ == "__main__":
             
         elif mode == "hierarchical KAML":
             config = {
-                'seed': 2,
+                'seed': 8,
 
                 'baseline': 'LinearFeatureBaseline',
 
@@ -217,13 +217,13 @@ if __name__ == "__main__":
                 'multi_maml': False,
                 'phi_test': False,
                 'switch_thresh': 1000,
-                'num_clusters_upper_lim': 3,
+                'num_clusters_upper_lim': 1, #3,
                 'mode_name': str(mode),
 
             }
             assert len(config['probs']) == 2
             assert len(config['env']) == 2
-            assert config['num_clusters_upper_lim'] == 3
+            # assert config['num_clusters_upper_lim'] == 3
             assert config['multi_maml'] == False
             assert config['phi_test'] == False
         

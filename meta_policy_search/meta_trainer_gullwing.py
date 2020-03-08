@@ -173,6 +173,18 @@ class KAML_Test_Trainer(object):
             start_time = time.time()
 
             num_thetas_used = 0 #  might need to be in iteration loop
+            
+            """self.algos is the global list of algos and every algo is denoted by its index there."""
+            # new
+            first_theta = 0
+            # thetas = {}
+            # theta_vecs = {first_theta:}
+            task_thetas = [first_theta for _ in range(self.meta_batch_size)]
+            children = {first_theta: []}
+            theta_depth = {first_theta: 1}
+            max_depth = max([theta_depth[algo] for algo in theta_depth.keys()])
+            all_algos_inner_loop_grads = []
+            clusterer = DBSCAN(eps=0.3, min_samples=1)  
 
             for itr in range(self.start_itr, self.n_itr):
 
@@ -188,9 +200,7 @@ class KAML_Test_Trainer(object):
                     for sampler in self.samplers:
                         sampler.update_tasks()
 
-                # shape : num_algos, num_inner_steps, num_tasks, ..
-                all_algo_all_samples_data = [[]
-                                             for _ in range(self.theta_count)]
+                
                 # shape : num_algos, num_tasks
                 all_algo_inner_loop_losses = []
                 all_algo_inner_loop_returns = []
@@ -204,23 +214,14 @@ class KAML_Test_Trainer(object):
                                 list(range(self.num_envs)), p=self.probs)
                     all_true_indices.append(index)
 
-                """self.algos is the global list of algos and every algo is denoted by its index there."""
-                # new
-                first_theta = 0
-                # thetas = {}
-                # theta_vecs = {first_theta:}
-                task_thetas = [first_theta for _ in range(self.meta_batch_size)]
-                children = {first_theta: []}
-                theta_depth = {first_theta: 1}
-                max_depth = max([theta_depth[algo] for algo in theta_depth.keys()])
-                all_algos_inner_loop_grads = []
-                clusterer = DBSCAN(eps=0.3, min_samples=1)  
-
                 # Refactored
 
                 # Find the appropriate leaf theta for each task.
                 algos_grads = {} # {algo_ind:[] for algo_ind, algo in enumerate(self.algos)}
                 for depth in range(max_depth + 1):
+                    # shape : num_algos, num_inner_steps, num_tasks, ..
+                    all_algo_all_samples_data = [[]
+                                             for _ in range(self.theta_count)]
                     # Sample path for each task and its theta
                     for algo_ind, algo in enumerate(self.algos):
                         if algo_ind not in task_thetas:
@@ -267,7 +268,7 @@ class KAML_Test_Trainer(object):
                         all_algo_inner_loop_returns.append(algo_returns)
 
                         all_algo_all_samples_data[algo_ind].append(samples_data)
-
+                        # fixed this 
                         # list_proc_samples_time.append(
                         #     time.time() - time_proc_samples_start)
 
@@ -288,11 +289,69 @@ class KAML_Test_Trainer(object):
 
                             algo_inner_loop_grads = np.array([np.concatenate(list([np.array(value).flatten() for value in d.values()])) for d in algo_inner_loop_grads])
 
-                    # Calculate the gradient
-                    # Update the mapping
-                        if depth == max_depth:
-                            algos_grads[algo_ind] = [algo_inner_loop_grads[i] for i in range(len(task_thetas)) if i in theta_task_inds]
+                    """------------------- Outer Policy Gradient calculation --------------------"""
+                    
+                    print("all_algo_all_samples_data")
+                    print("len(all_algo_all_samples_data[0]): ", len(all_algo_all_samples_data[0]))
+                    print("len(all_algo_all_samples_data[0][0]): ", len(all_algo_all_samples_data[0][0]))
+                    print("len(all_algo_all_samples_data[0][0][0]): ", len(all_algo_all_samples_data[0][0][0])) 
+                    print("all_algo_all_samples_data[0][0][0]: ", all_algo_all_samples_data[0][0][0]) 
+                            
+                    for algo_ind, algo in enumerate(self.algos):
+                        # Get all indices of data from tasks that were assigned to this algo
 
+                        if algo_ind not in task_thetas:
+                            continue 
+
+#                         print("arg_where(task_thetas, algo)", arg_where(task_thetas, algo_ind))
+#                         theta_task_inds = arg_where(task_thetas, algo_ind)
+#                         relevant_datalgo_indices = theta_task_inds
+#                         print("all_algo_all_samples_data[algo_ind, :, relevant_datalgo_indices]")
+#                         print("np.array(all_algo_all_samples_data).shape", np.array(all_algo_all_samples_data).shape)
+
+#                         # print("all_algo_all_samples_data.shape", all_algo_all_samples_data.shape)
+#                         for i in range(len(all_algo_all_samples_data)):
+#                             print("len(all_algo_all_samples_data[0])", len(all_algo_all_samples_data[i]))
+
+                        # Fill the batch to make the shape right.
+                        x = (np.array(all_algo_all_samples_data[algo_ind])[:, :])  # 21 x 2
+                        # x = all_algo_all_samples_data[algo_ind] # (np.array(all_algo_all_samples_data[algo_ind])[:, list(relevant_datalgo_indices)])  # 21 x 2
+
+#                         path_list = algo_samples_reward_data[algo_ind]
+#                         assert set(path_list.keys()) == set(relevant_datalgo_indices), path_list.keys() 
+#                         for index in relevant_datalgo_indices:
+#                             path = path_list[index]
+#                             relevant_paths[count] = path
+#                             count += 1
+
+#                         # if in the initial phase of phi_test, cut x to one example.
+#                         if phi_test and itr < switch_thresh:
+#                             print("initial x.shape = {}".format(x.shape))
+#                             x = x[0:1,:]
+#                             print("converted to x.shape = {}".format(x.shape))
+
+#                         difference = self.meta_batch_size - x.shape[0]
+#                         sample_indices = np.random.choice(
+#                             x.shape[0], difference, replace=True)
+
+#                         new_x = np.concatenate([x, x[sample_indices]], axis=0)
+#                         np.random.shuffle(new_x)
+
+                        # print("optimize policy input", new_x.shape)
+                        gradients = algo.compute_outer_gradients(x.T)
+        
+                        print("GRADIENTS!")
+                        print(gradients)
+                        print(gradients.shape)
+                        print("\n\n\n\n\n\n\n\n")
+                        
+                        # Calculate the gradient
+                        # Update the mapping
+                        if depth == max_depth:
+                            algos_grads[algo_ind] = [gradients[i] for i in range(len(task_thetas)) if i in theta_task_inds]
+                    
+                    
+                
                 for algo_ind, algo in enumerate(self.algos):
                     if algo_ind not in task_thetas:
                         continue
@@ -507,7 +566,12 @@ class KAML_Test_Trainer(object):
                     np.random.shuffle(new_x)
 
                     # print("optimize policy input", new_x.shape)
-                    algo.optimize_policy(new_x.T)
+                    gradients = algo.optimize_policy(new_x.T)
+#                     print("GRADIENTS!")
+#                     print(gradients)
+#                     print(gradients.shape)
+#                     print("\n\n\n\n\n\n\n\n")
+                    
 
                 self.sample_processor._helper(relevant_paths, log='reward', log_prefix='Step_2-')
 
@@ -557,3 +621,4 @@ class KAML_Test_Trainer(object):
         #self.envs.log_diagnostics(paths, prefix)
         # self.poli.log_diagnostics(paths, prefix)
         self.baseline.log_diagnostics(paths, prefix)
+
