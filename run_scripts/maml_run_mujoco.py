@@ -24,7 +24,7 @@ modes = ["MAML on two envs",
          "KAML with late theta initialization"]
     
 mode = "KAML with late theta initialization"
-
+SEED = 12
 
 meta_policy_search_path = '/'.join(os.path.realpath(
     os.path.dirname(__file__)).split('/')[:-1])
@@ -133,7 +133,7 @@ if __name__ == "__main__":
     else:  # use default config
         if mode == "MAML on two envs":
             config = {
-                'seed': 1,
+                'seed': SEED,
 
                 'baseline': 'LinearFeatureBaseline',
 
@@ -179,7 +179,7 @@ if __name__ == "__main__":
             
         elif mode == "KAML with no initialization":
             config = {
-                'seed': 1,
+                'seed': SEED,
 
                 'baseline': 'LinearFeatureBaseline',
 
@@ -224,7 +224,7 @@ if __name__ == "__main__":
             
         elif mode == "KAML with phi initialization":
             config = {
-                'seed': 1,
+                'seed': SEED,
 
                 'baseline': 'LinearFeatureBaseline',
 
@@ -269,7 +269,7 @@ if __name__ == "__main__":
         # Basically MultiMAML
         elif mode == "KAML with late theta initialization":
             config = {
-                'seed': 1,
+                'seed': SEED,
 
                 'baseline': 'LinearFeatureBaseline',
 
