@@ -212,7 +212,7 @@ class KAML_Test_Trainer(object):
                 max_depth = max([theta_depth[algo] for algo in theta_depth.keys()])
 
 
-                clusterer = DBSCAN(eps=3, min_samples=1)
+                clusterer = DBSCAN(eps=0.3, min_samples=1)
                 for depth_counter in range(max_depth + 1):
                     max_depth = max([theta_depth[algo] for algo in theta_depth.keys()])
                     for a_ind, algo in enumerate(list(set(task_to_theta))):
@@ -321,10 +321,13 @@ class KAML_Test_Trainer(object):
                             if depth_counter < max_depth:
                                 if not p2c[algo]:
                                     clustering = clusterer.fit(algo_inner_loop_grads) # ?  
+                                    np.save("grads.npy", algo_inner_loop_grads)
+                                    print("saved")
                                     cluster_labels = clustering.labels_
+                                    print(cluster_labels, "\n\n\n\n\n\n\nNOT CLUSTERING\n\n\n\n\n\n\n") 
                                     if max(cluster_labels) > 0:
                                         number_of_children = max(cluster_labels) + 1
-                                        print(cluster_labels, "NATURE BEGS ME TO CLUSTER") 
+                                        print(cluster_labels, "\n\n\n\n\n\n\nNATURE WANTS ME TO CLUSTER\n\n\n\n\n\n\n") 
                                         p2c[algo] = [deepcopy(algo) for _ in range(number_of_children)]
                                         for cluster_ind, child_algo in enumerate(p2c[algo]):
                                             cluster_grads = algo_inner_loop_grads[np.argwhere(cluster_labels == cluster_ind)]

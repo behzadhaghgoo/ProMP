@@ -3,19 +3,21 @@ import argparse
 import json
 import os
 import numpy as np
+import sys
+sys.path.append('~/cml_winter/') 
+# sys.path.append('~/cml_winter/meta_policy_search/')
 from meta_policy_search.utils.utils import set_seed, ClassEncoder
 from meta_policy_search.utils import logger
 from meta_policy_search.policies.meta_gaussian_mlp_policy import MetaGaussianMLPPolicy
 from meta_policy_search.samplers.meta_sample_processor import MetaSampleProcessor
 from meta_policy_search.samplers.meta_sampler import MetaSampler
-from meta_policy_search.meta_trainer_giraffe import KAML_Test_Trainer # changed from meta_trainer 
+from meta_policy_search.meta_trainer import KAML_Test_Trainer # changed from meta_trainer_giraffe 
 from meta_policy_search.meta_algos.trpo_maml import TRPOMAML
 from meta_policy_search.envs.normalized_env import normalize
 from meta_policy_search.envs.mujoco_envs.ant_rand_direc import AntRandDirecEnv
 from meta_policy_search.envs.mujoco_envs.half_cheetah_rand_direc import HalfCheetahRandDirecEnv
 from meta_policy_search.baselines.linear_baseline import LinearFeatureBaseline
-import sys
-sys.path.append('~/cml/')
+
 
 modes = ["MAML on two envs", 
          "MultiMAML", 
@@ -23,7 +25,7 @@ modes = ["MAML on two envs",
          "KAML with phi initialization", 
          "KAML with late theta initialization"]
     
-mode = "MAML on two envs"
+mode = "KAML with late theta initialization"
 print("using mode: ", mode)
 hidden_sizes = (64,64)
 
@@ -301,11 +303,11 @@ if __name__ == "__main__":
                 'multi_maml': True,
                 'phi_test': False,
                 'switch_thresh': 0,
-                'num_clusters_upper_lim': 2,
+                'num_clusters_upper_lim': 1,
                 'mode_name': str(mode), 
             }
             assert len(config['probs']) == 2
-            assert config['num_clusters_upper_lim'] == 2
+#             assert config['num_clusters_upper_lim'] == 2
             assert config['multi_maml'] == True
             assert config['phi_test'] == False
             assert config['switch_thresh'] < 200

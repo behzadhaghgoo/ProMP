@@ -3,6 +3,13 @@ __pycache__/
 *.py[cod]
 *$py.class
 *DS_Store
+true_indices_iter*
+grads_itr_*
+grads_iter*
+*.p
+MUJOCO_LOG.TXT
+*.zip
+*.np*
 # C extensions
 *.so
 *.ipynb
