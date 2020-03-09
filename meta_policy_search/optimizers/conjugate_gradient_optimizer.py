@@ -184,6 +184,10 @@ class ConjugateGradientOptimizer(Optimizer):
         for idx, (grad, param) in enumerate(zip(grads, params)):
             if grad is None:
                 grads[idx] = tf.zeros_like(param)
+        print("gradients_.shape\n\n\n\n")
+        print(len(grads)) 
+        for grad in grads: 
+            print(grad.shape)  
         gradient = tf.concat([tf.reshape(grad, [-1]) for grad in grads], axis=0)
 
         self._gradient = gradient

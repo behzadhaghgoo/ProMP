@@ -4,6 +4,7 @@ from meta_policy_search.optimizers.conjugate_gradient_optimizer import Conjugate
 
 import tensorflow as tf
 from collections import OrderedDict
+import numpy as np 
 
 
 class TRPOMAML(MAMLAlgo):
@@ -188,6 +189,7 @@ class TRPOMAML(MAMLAlgo):
         Returns:
             None
         """
+        
         meta_op_input_dict = self._extract_input_dict_meta_op(
             all_samples_data, self._optimization_keys)
         logger.log("Computing KL before")
@@ -226,28 +228,45 @@ class TRPOMAML(MAMLAlgo):
         Returns:
             None
         """
+        print("ALL SAMPLES DATA")
+        print(len(all_samples_data))
+        print(len(all_samples_data[0]))
         meta_op_input_dict = self._extract_input_dict_meta_op(
             all_samples_data, self._optimization_keys)
-        logger.log("Computing KL before")
-        mean_kl_before = self.optimizer.constraint_val(meta_op_input_dict)
-
-        logger.log("Computing loss before")
-        loss_before = self.optimizer.loss(meta_op_input_dict)
-        logger.log("Optimizing")
-        self.optimizer.compute_gradients(meta_op_input_dict)
-        logger.log("Computing loss after")
-        loss_after = self.optimizer.loss(meta_op_input_dict)
-        gradients = self.optimizer.gradient(meta_op_input_dict)
-
-        logger.log("Computing KL after")
-        mean_kl = self.optimizer.constraint_val(meta_op_input_dict)
-
-        if log:
-            logger.logkv('MeanKLBefore', mean_kl_before)
-            logger.logkv('MeanKL', mean_kl)
-
-            logger.logkv('LossBefore', loss_before)
-            logger.logkv('LossAfter', loss_after)
-            logger.logkv('dLoss', loss_before - loss_after)
+        print(meta_op_input_dict.keys())
+        print(meta_op_input_dict['step0_task0_observations'])
+        
+        all_gradients = [] 
+        
+        for task_ind in range(40):
             
-        return gradients 
+            keys = [k for k in meta_op_input_dict.keys() if 'task{}'.format(task_ind) not in k]
+            for key in keys:
+                 meta_op_input_dict[key] = np.zeros_like(meta_op_input_dict[key])
+            # meta_op_input_dict = { key: meta_op_input_dict[key] for key in keys } 
+            
+            logger.log("Computing KL before")
+            mean_kl_before = self.optimizer.constraint_val(meta_op_input_dict)
+
+            logger.log("Computing loss before")
+            loss_before = self.optimizer.loss(meta_op_input_dict)
+            logger.log("Optimizing")
+            self.optimizer.compute_gradient(meta_op_input_dict)
+            logger.log("Computing loss after")
+            loss_after = self.optimizer.loss(meta_op_input_dict)
+            gradients = self.optimizer.gradient(meta_op_input_dict)
+            
+            all_gradients.append(gradients)
+
+            logger.log("Computing KL after")
+            mean_kl = self.optimizer.constraint_val(meta_op_input_dict)
+
+            if log:
+                logger.logkv('MeanKLBefore', mean_kl_before)
+                logger.logkv('MeanKL', mean_kl)
+
+                logger.logkv('LossBefore', loss_before)
+                logger.logkv('LossAfter', loss_after)
+                logger.logkv('dLoss', loss_before - loss_after)
+
+        return all_gradients 

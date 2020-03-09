@@ -291,12 +291,14 @@ class KAML_Test_Trainer(object):
 
                     """------------------- Outer Policy Gradient calculation --------------------"""
                     
-                    print("all_algo_all_samples_data")
-                    print("len(all_algo_all_samples_data[0]): ", len(all_algo_all_samples_data[0]))
-                    print("len(all_algo_all_samples_data[0][0]): ", len(all_algo_all_samples_data[0][0]))
-                    print("len(all_algo_all_samples_data[0][0][0]): ", len(all_algo_all_samples_data[0][0][0])) 
-                    print("all_algo_all_samples_data[0][0][0]: ", all_algo_all_samples_data[0][0][0]) 
-                            
+#                     print("all_algo_all_samples_data")
+#                     print("len(all_algo_all_samples_data[0]): ", len(all_algo_all_samples_data[0]))
+#                     print("len(all_algo_all_samples_data[0][0]): ", len(all_algo_all_samples_data[0][0]))
+#                     print("len(all_algo_all_samples_data[0][0][0]): ", len(all_algo_all_samples_data[0][0][0])) 
+#                     print("all_algo_all_samples_data[0][0][0]: ", all_algo_all_samples_data[0][0][0]) 
+                    
+#                     print("all_algo_all_samples_data.shape", all_algo_all_samples_data.shape)
+    
                     for algo_ind, algo in enumerate(self.algos):
                         # Get all indices of data from tasks that were assigned to this algo
 
@@ -309,9 +311,9 @@ class KAML_Test_Trainer(object):
 #                         print("all_algo_all_samples_data[algo_ind, :, relevant_datalgo_indices]")
 #                         print("np.array(all_algo_all_samples_data).shape", np.array(all_algo_all_samples_data).shape)
 
-#                         # print("all_algo_all_samples_data.shape", all_algo_all_samples_data.shape)
-#                         for i in range(len(all_algo_all_samples_data)):
-#                             print("len(all_algo_all_samples_data[0])", len(all_algo_all_samples_data[i]))
+                        print("len(all_algo_all_samples_data)", len(all_algo_all_samples_data))
+                        for i in range(len(all_algo_all_samples_data)):
+                            print("len(all_algo_all_samples_data[0])", len(all_algo_all_samples_data[i]))
 
                         # Fill the batch to make the shape right.
                         x = (np.array(all_algo_all_samples_data[algo_ind])[:, :])  # 21 x 2
@@ -337,7 +339,7 @@ class KAML_Test_Trainer(object):
 #                         new_x = np.concatenate([x, x[sample_indices]], axis=0)
 #                         np.random.shuffle(new_x)
 
-                        # print("optimize policy input", new_x.shape)
+                        print(x.shape)
                         gradients = algo.compute_outer_gradients(x.T)
         
                         print("GRADIENTS!")
@@ -444,13 +446,17 @@ class KAML_Test_Trainer(object):
                         logger.log("Obtaining samples...")
                         time_env_sampling_start = time.time()
 
-                        theta_task_inds = arg_where(task_thetas, algo_ind) 
+
+#                         theta_task_inds = arg_where(task_thetas, algo_ind) 
+                        theta_task_inds = [i for i in range(40)]
                         true_indices = list(np.take(all_true_indices, theta_task_inds))
                         
                         print("algo_ind: {}, theta tasks: {}".format(algo_ind, theta_task_inds)) 
                         if theta_task_inds == []:
                             print("theta_task_inds = []")
                             continue
+
+
                         # Meta-sampler's obtain_samples function now takes as input policy since we need trajectories for each policy
                         initial_paths = [sampler.obtain_samples(
                             policy=policy, log=True, log_prefix='Step_%d-' % step) for sampler in self.samplers]
@@ -543,8 +549,8 @@ class KAML_Test_Trainer(object):
                         print("len(all_algo_all_samples_data[0])", len(all_algo_all_samples_data[i]))
                     
                     # Fill the batch to make the shape right.
-                    x = (np.array(all_algo_all_samples_data[algo_ind])[:, list(relevant_datalgo_indices)])  # 21 x 2
-
+                    x = (np.array(all_algo_all_samples_data[algo_ind])[:, list(relevant_datalgo_indices)]).T  # 21 x 2
+                    print("HERE x.shape", x.shape)
                     path_list = algo_samples_reward_data[algo_ind]
                     assert set(path_list.keys()) == set(relevant_datalgo_indices), path_list.keys() 
                     for index in relevant_datalgo_indices:
@@ -562,9 +568,10 @@ class KAML_Test_Trainer(object):
                     sample_indices = np.random.choice(
                         x.shape[0], difference, replace=True)
 
+                    print("outer x.shape", x.shape)
                     new_x = np.concatenate([x, x[sample_indices]], axis=0)
                     np.random.shuffle(new_x)
-
+                    print("new_x.shape", new_x.shape)
                     # print("optimize policy input", new_x.shape)
                     gradients = algo.optimize_policy(new_x.T)
 #                     print("GRADIENTS!")
