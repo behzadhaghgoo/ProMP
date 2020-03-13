@@ -240,26 +240,29 @@ class TRPOMAML(MAMLAlgo):
         
         for task_ind in range(40):
             
-            keys = [k for k in meta_op_input_dict.keys() if 'task{}'.format(task_ind) not in k]
+            meta_op_input_dict_copy = meta_op_input_dict.copy() 
+            
+            keys = [k for k in meta_op_input_dict_copy.keys() if 'task{}'.format(task_ind) not in k]
+            
             for key in keys:
-                 meta_op_input_dict[key] = np.zeros_like(meta_op_input_dict[key])
+                 meta_op_input_dict_copy[key] = np.zeros_like(meta_op_input_dict_copy[key])
             # meta_op_input_dict = { key: meta_op_input_dict[key] for key in keys } 
             
             logger.log("Computing KL before")
-            mean_kl_before = self.optimizer.constraint_val(meta_op_input_dict)
+            mean_kl_before = self.optimizer.constraint_val(meta_op_input_dict_copy)
 
             logger.log("Computing loss before")
-            loss_before = self.optimizer.loss(meta_op_input_dict)
+            loss_before = self.optimizer.loss(meta_op_input_dict_copy)
             logger.log("Optimizing")
-            self.optimizer.compute_gradient(meta_op_input_dict)
+            self.optimizer.compute_gradient(meta_op_input_dict_copy)
             logger.log("Computing loss after")
-            loss_after = self.optimizer.loss(meta_op_input_dict)
-            gradients = self.optimizer.gradient(meta_op_input_dict)
+            loss_after = self.optimizer.loss(meta_op_input_dict_copy)
+            gradients = self.optimizer.gradient(meta_op_input_dict_copy)
             
             all_gradients.append(gradients)
 
             logger.log("Computing KL after")
-            mean_kl = self.optimizer.constraint_val(meta_op_input_dict)
+            mean_kl = self.optimizer.constraint_val(meta_op_input_dict_copy)
 
             if log:
                 logger.logkv('MeanKLBefore', mean_kl_before)
