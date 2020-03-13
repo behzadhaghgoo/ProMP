@@ -443,6 +443,16 @@ class KAML_Test_Trainer(object):
 
                         logger.log("Processing samples...")
                         time_proc_samples_start = time.time()
+                        
+                        
+#                         if itr >= 10: 
+#                             if a_ind == 0: 
+#                                 log_or_not = False 
+#                             else:
+#                                 log_or_not = True 
+#                         else:
+#                             log_or_not = False 
+                        
                         samples_data = self.sample_processor.process_samples(
                             paths, log='all', log_prefix='Step_%d-' % step)
                         # (number of inner updates, meta_batch_size)
@@ -498,6 +508,9 @@ class KAML_Test_Trainer(object):
                             logger.log("Computing inner policy updates...")
                             algo_inner_loop_losses, _, algo_inner_loop_grads = algo._adapt(
                                 samples_data)
+                            
+                            if a_ind == 0: 
+                                first_algo_inner_loop_grads = algo_inner_loop_grads 
 
                         list_inner_step_time.append(
                             time.time() - time_inner_step_start)
@@ -547,8 +560,8 @@ class KAML_Test_Trainer(object):
                 
                 ##########
                     
-                clusterer = KMeans(n_clusters=self.theta_count)
-                sample_grads = np.array([np.concatenate(list([np.array(value).flatten() for value in d.values()])) for d in algo_inner_loop_grads])
+                clusterer = KMeans(n_clusters=self.theta_count-1)
+                sample_grads = np.array([np.concatenate(list([np.array(value).flatten() for value in d.values()])) for d in first_algo_inner_loop_grads])
                 
                 start_clustering_at = 10 
                 if itr >= start_clustering_at:
@@ -591,8 +604,12 @@ class KAML_Test_Trainer(object):
                 
                 for a_ind, algo in enumerate(self.algos[:self.theta_count]):
                     # Get all indices of data from tasks that were assigned to this algo
+                    
                     if itr >= start_clustering_at:
-                        relevant_data_indices = (labels == a_ind)
+                        print("labels: {}".format(labels))
+                        print("a_ind: {}".format(a_ind))
+                        relevant_data_indices = (labels + 1 == a_ind)
+                        print("relevant_data_indices: {}".format(relevant_data_indices))
                     else: 
                         relevant_data_indices = len(which_algo) * [1]
                     print("relevant_data_indices", relevant_data_indices)
@@ -600,6 +617,9 @@ class KAML_Test_Trainer(object):
                     # print("relevant_data_indices", relevant_data_indices.shape)
                     relevant_data_indices = np.nonzero(
                         relevant_data_indices)[0]
+                    
+                    if len(relevant_data_indices) == 0:
+                        continue
                     # print("relevant_data_indices", relevant_data_indices.shape)
                     print(
                         "all_algo_all_samples_data[a_ind, :, relevant_data_indices]")
@@ -607,15 +627,16 @@ class KAML_Test_Trainer(object):
                     # Fill the batch to make the shape right.
                     x = (all_algo_all_samples_data[a_ind, :, list(
                         relevant_data_indices)])  # 21 x 2
-                    assert x.shape[1] == 2
-                    print("x.shape", x.shape)
+
 #                     print(algo_samples_reward_data)
                     path_list = algo_samples_reward_data[a_ind]
 
-                    for index in relevant_data_indices:
-                        path = path_list[index]
-                        relevant_paths[count] = path
-                        count += 1
+                    # Only log reward for algo 1 and algo 2
+                    if a_ind != 0: 
+                        for index in relevant_data_indices:
+                            path = path_list[index]
+                            relevant_paths[count] = path
+                            count += 1
 
                     # if in the initial phase of phi_test, cut x to one example.
                     if phi_test and itr < switch_thresh:
@@ -626,15 +647,14 @@ class KAML_Test_Trainer(object):
                     difference = self.meta_batch_size - x.shape[0]
                     sample_indices = np.random.choice(
                         x.shape[0], difference, replace=True)
-                    
+
                     new_x = np.concatenate([x, x[sample_indices]], axis=0)
-                    print("new_x.shape", new_x.shape)
                     np.random.shuffle(new_x)
 
                     # print("optimize policy input", new_x.shape)
-                    
                     algo.optimize_policy(new_x.T)
 
+                # This is where we log Step2-AverageReturn 
                 self.sample_processor._helper(relevant_paths, log='reward', log_prefix='Step_2-')
 
                 clustering_score = np.abs(

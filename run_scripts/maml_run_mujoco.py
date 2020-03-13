@@ -303,7 +303,7 @@ if __name__ == "__main__":
                 'multi_maml': True,
                 'phi_test': False,
                 'switch_thresh': 0,
-                'num_clusters_upper_lim': 1,
+                'num_clusters_upper_lim': 3,
                 'mode_name': str(mode), 
             }
             assert len(config['probs']) == 2
