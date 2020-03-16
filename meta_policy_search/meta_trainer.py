@@ -563,7 +563,7 @@ class KAML_Test_Trainer(object):
                 clusterer = KMeans(n_clusters=self.theta_count-1)
                 sample_grads = np.array([np.concatenate(list([np.array(value).flatten() for value in d.values()])) for d in first_algo_inner_loop_grads])
                 
-                start_clustering_at = 10 
+                start_clustering_at = 60 
                 if itr >= start_clustering_at:
                     
                     if itr == start_clustering_at:
@@ -588,8 +588,8 @@ class KAML_Test_Trainer(object):
 
                         # Plot the grads
                     if itr % 10 == 0:
-                        plt.xlim(-5,5)
-                        plt.ylim(-3,3)
+#                         plt.xlim(-5,5)
+#                         plt.ylim(-3,3)
                         sns.scatterplot(
                         x=df['x'], y=df['y'],
                         hue=labels,
@@ -657,9 +657,11 @@ class KAML_Test_Trainer(object):
                 # This is where we log Step2-AverageReturn 
                 self.sample_processor._helper(relevant_paths, log='reward', log_prefix='Step_2-')
 
-                clustering_score = np.abs(
-                    np.mean(np.abs(true_indices - which_algo)) - 0.5) * 2.0
-                logger.logkv('Clustering Score', clustering_score)
+                
+                if itr >= start_clustering_at:
+                    clustering_score = np.abs(
+                        np.mean(np.abs(true_indices - labels)) - 0.5) * 2.0
+                    logger.logkv('Clustering Score', clustering_score)
 
 
                 """ ------------------- Logging Stuff --------------------------"""
