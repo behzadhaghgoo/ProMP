@@ -1,5 +1,5 @@
-import time
 import argparse
+import time
 import json
 import os
 import numpy as np
@@ -14,9 +14,30 @@ from meta_policy_search.samplers.meta_sampler import MetaSampler
 from meta_policy_search.meta_trainer import KAML_Test_Trainer # changed from meta_trainer_giraffe 
 from meta_policy_search.meta_algos.trpo_maml import TRPOMAML
 from meta_policy_search.envs.normalized_env import normalize
-from meta_policy_search.envs.mujoco_envs.ant_rand_direc import AntRandDirecEnv
-from meta_policy_search.envs.mujoco_envs.half_cheetah_rand_direc import HalfCheetahRandDirecEnv
+# from meta_policy_search.envs.mujoco_envs.ant_rand_direc import AntRandDirecEnv
+# from meta_policy_search.envs.mujoco_envs.swimmer_rand_vel import SwimmerRandVelEnv
+
+
+from meta_policy_search.envs.mujoco_envs.ant_rand_direc import AntRandDirecEnv 
+from meta_policy_search.envs.mujoco_envs.humanoid_rand_direc import HumanoidRandDirecEnv
+from meta_policy_search.envs.mujoco_envs.ant_rand_direc_2d import AntRandDirec2DEnv
+from meta_policy_search.envs.mujoco_envs.humanoid_rand_direc_2d import  HumanoidRandDirec2DEnv
+from meta_policy_search.envs.mujoco_envs.ant_rand_goal import AntRandGoalEnv
+from meta_policy_search.envs.mujoco_envs.swimmer_rand_vel import  SwimmerRandVelEnv
+from meta_policy_search.envs.mujoco_envs.half_cheetah_rand_direc import  HalfCheetahRandDirecEnv
+from meta_policy_search.envs.mujoco_envs.walker2d_rand_direc import Walker2DRandDirecEnv  
+from meta_policy_search.envs.mujoco_envs.half_cheetah_rand_vel import HalfCheetahRandVelEnv
+from meta_policy_search.envs.mujoco_envs.walker2d_rand_vel import Walker2DRandVelEnv
+
+# from meta_policy_search.envs.mujoco_envs.half_cheetah_rand_direc import HalfCheetahRandDirecEnv
 from meta_policy_search.baselines.linear_baseline import LinearFeatureBaseline
+
+
+
+
+
+
+
 
 
 modes = ["MAML on two envs", 
@@ -38,10 +59,11 @@ def main(config):
     set_seed(config['seed']) # TODO: what is this line doing?
 
     baseline = globals()[config['baseline']]()  # instantiate baseline
-
+    env_names = "_".join(config['env'])
+    
     envs = [globals()[env]() for env in config['env']]
     envs = [normalize(env) for env in envs]  # apply normalize wrapper to env
-
+    print("\n\n\n\n\nenvs = {}\n\n\n\n\n".format(env_names))
     max_action_dim = np.max([env.action_space.shape[0] for env in envs])
     max_obs_dim = np.max([env.observation_space.shape[0] for env in envs])
 
@@ -97,6 +119,7 @@ def main(config):
         algos=algos,
         policies=policies,
         envs=envs,
+        env_names = env_names,
         samplers=samplers,
         sample_processor=sample_processor,
         n_itr=config['n_itr'],
@@ -121,10 +144,15 @@ if __name__ == "__main__":
                         help='json file with run specifications')
     parser.add_argument('--dump_path', type=str,
                         default=meta_policy_search_path + '/data/pro-mp/run_%d' % idx)
+    
+    parser.add_argument('--envs', type=str,
+                        default="AntRandDirecEnv, HalfCheetahRandDirecEnv")
+
 
     args = parser.parse_args()
+    envs = args.envs.replace(" ", "").split(",")
 
-    
+#     assert 1 == 2, "args.envs = {}".format(envs)
     logger.log("mode: {}".format(mode))
     
     if args.config_file:  # load configuration from json file
@@ -138,7 +166,7 @@ if __name__ == "__main__":
 
                 'baseline': 'LinearFeatureBaseline',
 
-                'env': ['AntRandDirecEnv', 'HalfCheetahRandDirecEnv'],
+                'env': envs,# ['AntRandDirecEnv', 'HalfCheetahRandDirecEnv'],
                 'probs': [0.5, 0.5],
 
                 # sampler config
@@ -184,7 +212,7 @@ if __name__ == "__main__":
 
                 'baseline': 'LinearFeatureBaseline',
 
-                'env': ['AntRandDirecEnv', 'HalfCheetahRandDirecEnv'],
+                'env': envs,
                 'probs': [0.5, 0.5],
 
                 # sampler config
@@ -229,7 +257,7 @@ if __name__ == "__main__":
 
                 'baseline': 'LinearFeatureBaseline',
 
-                'env': ['AntRandDirecEnv', 'HalfCheetahRandDirecEnv'],
+                'env': envs,
                 'probs': [0.5, 0.5],
 
                 # sampler config
@@ -274,7 +302,7 @@ if __name__ == "__main__":
 
                 'baseline': 'LinearFeatureBaseline',
 
-                'env': ['AntRandDirecEnv', 'HalfCheetahRandDirecEnv'],
+                'env': envs, #['AntRandDirecEnv', 'SwimmerRandVelEnv'],
                 'probs': [0.5, 0.5],
 
                 # sampler config
@@ -295,7 +323,7 @@ if __name__ == "__main__":
                 'inner_lr': 0.1,  # adaptation step size
                 'learning_rate': 1e-3,  # meta-policy gradient step size
                 'step_size': 0.01,  # size of the TRPO trust-region
-                'n_itr': 1001,  # number of overall training iterations
+                'n_itr': 31, #1001,  # number of overall training iterations
                 'meta_batch_size': 40,  # number of sampled meta-tasks per iterations
                 'num_inner_grad_steps': 1,  # number of inner / adaptation gradient steps
                 'inner_type': 'log_likelihood',  # type of inner loss function used

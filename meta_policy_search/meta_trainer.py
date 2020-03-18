@@ -263,6 +263,7 @@ class KAML_Test_Trainer(object):
             self,
             algos,
             envs,
+            env_names,
             samplers,
             sample_processor,
             policies,
@@ -282,6 +283,7 @@ class KAML_Test_Trainer(object):
         self.theta_count = theta_count
 
         self.envs = envs
+        self.env_names = env_names
         self.samplers = samplers
         self.sample_processor = sample_processor
         self.baseline = sample_processor.baseline
@@ -496,12 +498,17 @@ class KAML_Test_Trainer(object):
                                 algo_inner_loop_losses)
                             #print("len(algo_inner_loop_grads)", len(algo_inner_loop_grads))
                             #print("algo_inner_loop_grads[0] shape: ", algo_inner_loop_grads[0].shape)
-                            if itr % 10 == 0: 
-                                pickle.dump( algo_inner_loop_grads, open("grads_iter_{}_.p".format(itr), "wb") )
+                            if a_ind == 0 and itr % 10 == 0: 
+                                logger.logkv(self.env_names, 0)
+                                print("saving for {}".format(self.env_names))
+                                pickle.dump(algo_inner_loop_grads, open("records/{}_grads_iter_{}_.p".format(self.env_names,itr), "wb") )
                                 print("\n\n\n\n\n\n")
                                 print("saving true_indices: ", true_indices)
                                 print("\n\n\n\n\n\n")
-                                pickle.dump( true_indices, open( "true_indices_iter_{}_.p".format(itr), "wb" ) ) 
+                                pickle.dump( true_indices, open( "records/{}_true_indices_iter_{}_.p".format(self.env_names,itr), "wb" ) ) 
+                                
+                            if a_ind == 0: 
+                                first_algo_inner_loop_grads = algo_inner_loop_grads 
 
                         time_inner_step_start = time.time()
                         if step < self.num_inner_grad_steps:
@@ -509,8 +516,7 @@ class KAML_Test_Trainer(object):
                             algo_inner_loop_losses, _, algo_inner_loop_grads = algo._adapt(
                                 samples_data)
                             
-                            if a_ind == 0: 
-                                first_algo_inner_loop_grads = algo_inner_loop_grads 
+                            
 
                         list_inner_step_time.append(
                             time.time() - time_inner_step_start)
@@ -561,9 +567,10 @@ class KAML_Test_Trainer(object):
                 ##########
                     
                 clusterer = KMeans(n_clusters=self.theta_count-1)
+                kernel = np.abs
                 sample_grads = np.array([np.concatenate(list([np.array(value).flatten() for value in d.values()])) for d in first_algo_inner_loop_grads])
                 
-                start_clustering_at = 10 
+                start_clustering_at = 60
                 if itr >= start_clustering_at:
                     
                     if itr == start_clustering_at:
@@ -579,33 +586,34 @@ class KAML_Test_Trainer(object):
 
                     if itr == start_clustering_at:
                         print("fitting Kmeans")
-                        clustering = clusterer.fit(t_vecs)
+                        clustering = clusterer.fit(kernel(t_vecs))
                         labels = clustering.labels_
 
-                    labels = clustering.predict(t_vecs)    
+                    labels = clustering.predict(kernel(t_vecs))
 
                     print("clustering.labels_", labels)
 
                         # Plot the grads
                     if itr % 10 == 0:
-                        plt.xlim(-5,5)
-                        plt.ylim(-3,3)
+#                         plt.xlim(-5,5)
+#                         plt.ylim(-3,3)
                         sns.scatterplot(
                         x=df['x'], y=df['y'],
                         hue=labels,
+                        style = true_indices,
                         palette=[color for i, color in enumerate(sns.color_palette("hls", max(clustering.labels_) - min(clustering.labels_) + 1)) if i in labels],
                         data=df,
                         legend="full",
                         alpha=1
                         )
-                        plt.savefig("grads_itr_{}.png".format(itr))
+                        plt.savefig("{}_grads_itr_{}.png".format(self.env_names,itr))
                         plt.close()
                         ##########
                 
                 for a_ind, algo in enumerate(self.algos[:self.theta_count]):
                     # Get all indices of data from tasks that were assigned to this algo
                     
-                    if itr >= start_clustering_at:
+                    if itr >= start_clustering_at and self.theta_count > 1:
                         print("labels: {}".format(labels))
                         print("a_ind: {}".format(a_ind))
                         relevant_data_indices = (labels + 1 == a_ind)
@@ -632,7 +640,7 @@ class KAML_Test_Trainer(object):
                     path_list = algo_samples_reward_data[a_ind]
 
                     # Only log reward for algo 1 and algo 2
-                    if a_ind != 0: 
+                    if a_ind != 0 or self.theta_count == 1: 
                         for index in relevant_data_indices:
                             path = path_list[index]
                             relevant_paths[count] = path
@@ -645,8 +653,7 @@ class KAML_Test_Trainer(object):
                         print("converted to x.shape = {}".format(x.shape))
 
                     difference = self.meta_batch_size - x.shape[0]
-                    sample_indices = np.random.choice(
-                        x.shape[0], difference, replace=True)
+                    sample_indices = np.random.choice(x.shape[0], difference, replace=True)
 
                     new_x = np.concatenate([x, x[sample_indices]], axis=0)
                     np.random.shuffle(new_x)
@@ -657,9 +664,11 @@ class KAML_Test_Trainer(object):
                 # This is where we log Step2-AverageReturn 
                 self.sample_processor._helper(relevant_paths, log='reward', log_prefix='Step_2-')
 
-                clustering_score = np.abs(
-                    np.mean(np.abs(true_indices - which_algo)) - 0.5) * 2.0
-                logger.logkv('Clustering Score', clustering_score)
+                
+                if itr >= start_clustering_at:
+                    clustering_score = np.abs(
+                        np.mean(np.abs(true_indices - labels)) - 0.5) * 2.0
+                    logger.logkv('Clustering Score', clustering_score)
 
 
                 """ ------------------- Logging Stuff --------------------------"""
@@ -684,7 +693,7 @@ class KAML_Test_Trainer(object):
                 if itr % 25 == 0:
                     print("Saving model...")
 #                     self.saver.save(sess, './MultiMaml_{}_PhiTest_{}_Iteration_{}'.format(multi_maml, phi_test, itr))
-                    self.saver.save(sess, './{}_Iteration_{}'.format("_".join(self.mode_name.split()), itr))
+                    self.saver.save(sess, './{}_{}_Iteration_{}'.format(self.env_names,"_".join(self.mode_name.split()), itr))
                 logger.save_itr_params(itr, params)
                 logger.log("Saved")
 
