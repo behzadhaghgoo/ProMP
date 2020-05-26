@@ -1,6 +1,7 @@
 # CS330 Project: Clustered Meta Learning
 
-This project aims to improve the performance of Model-Agnostic Meta Learning (MAML) by having multiple meta-parameters that enable the algorithm to understand the relations between various tasks.
+
+This project aims to improve the performance of Model-Agnostic Meta Learning (MAML) by having multiple meta-parameters that enable the algorithm to understand the relations between various tasks. Read the report [here](report.pdf)
 
 To run the algorithm, select the desired configuration in `run_scripts/maml_run_mujoco.py` and run
 
